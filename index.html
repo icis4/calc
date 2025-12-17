@@ -186,6 +186,11 @@
         <button class="key op" data-action="tan" aria-label="Tangent (degrees)">tan</button>
         <button class="key op" data-action="pi" aria-label="Pi">π</button>
         <button class="key op" data-action="inv" aria-label="Toggle inverse trig">INV</button>
+        <button class="key op" data-action="ln" aria-label="Natural logarithm">ln</button>
+        <button class="key op" data-action="log" aria-label="Base-10 logarithm">log</button>
+        <button class="key op" data-action="coin" aria-label="Coin flip (0 or 1)">Coin</button>
+        <button class="key op" data-action="dice" aria-label="Dice roll (1 to 6)">Dice</button>
+        <button class="key op" data-action="rand" aria-label="Random number (0 to 1)">Rand</button>
       </div>
 
       <!-- Primary keys -->
@@ -345,6 +350,82 @@
       current = fmt(r); overwrite = true; renderBottom(); renderTop();
     }
 
+    function applyLn() {
+      // Natural log (ln). Domain: x > 0
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      if (!(x > 0)) { setCurrent('Error'); return; }
+      current = fmt(Math.log(x));
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyLog10() {
+      // Base-10 log. Domain: x > 0
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      if (!(x > 0)) { setCurrent('Error'); return; }
+      const log10 = Math.log10 ? Math.log10(x) : (Math.log(x) / Math.LN10);
+      current = fmt(log10);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyExp() {
+      // e^x
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      current = fmt(Math.exp(x));
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyPow10() {
+      // 10^x
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      current = fmt(Math.pow(10, x));
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyCoin() {
+      // Random 0/1
+      if (current === 'Error') { current = '0'; }
+      const r = Math.random() < 0.5 ? 0 : 1;
+      current = String(r);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyDice() {
+      // Random integer 1..6
+      if (current === 'Error') { current = '0'; }
+      const r = Math.floor(Math.random() * 6) + 1;
+      current = String(r);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyRand() {
+      // Random in [0, 1). Ensure at least one decimal place in display.
+      if (current === 'Error') { current = '0'; }
+      const raw = Math.random();
+      let s = raw.toFixed(12);
+      s = s.replace(/0+$/, '');
+      if (s.endsWith('.')) s += '0';
+      current = s;
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
     function applyTrig(kind) {
       // Trig supports DEG and RAD modes.
       // Math.* trig functions use radians.
@@ -418,6 +499,29 @@
       if (invBtn) {
         invBtn.classList.toggle('accent', trigInverse);
         invBtn.setAttribute('aria-pressed', String(trigInverse));
+      }
+
+      // INV also toggles ln/log to their inverse exponent forms.
+      const lnBtn = shell.querySelector('button[data-action="ln"]');
+      if (lnBtn) {
+        if (!trigInverse) {
+          lnBtn.textContent = 'ln';
+          lnBtn.setAttribute('aria-label', 'Natural logarithm');
+        } else {
+          lnBtn.textContent = 'e^x';
+          lnBtn.setAttribute('aria-label', 'e to the power of x');
+        }
+      }
+
+      const logBtn = shell.querySelector('button[data-action="log"]');
+      if (logBtn) {
+        if (!trigInverse) {
+          logBtn.textContent = 'log';
+          logBtn.setAttribute('aria-label', 'Base-10 logarithm');
+        } else {
+          logBtn.textContent = '10^x';
+          logBtn.setAttribute('aria-label', '10 to the power of x');
+        }
       }
     }
 
@@ -494,6 +598,10 @@
       'P': () => inputPi(),
       'r': () => toggleAngleMode(),
       'R': () => toggleAngleMode(),
+      'l': () => (trigInverse ? applyExp() : applyLn()),
+      'L': () => (trigInverse ? applyExp() : applyLn()),
+      'g': () => (trigInverse ? applyPow10() : applyLog10()),
+      'G': () => (trigInverse ? applyPow10() : applyLog10()),
       'c': () => clearAll(),
       'C': () => clearAll(),
     };
@@ -528,6 +636,11 @@
         case 'tan': applyTrig('tan'); break;
         case 'pi': inputPi(); break;
         case 'inv': toggleTrigInverse(); break;
+        case 'ln': trigInverse ? applyExp() : applyLn(); break;
+        case 'log': trigInverse ? applyPow10() : applyLog10(); break;
+        case 'coin': applyCoin(); break;
+        case 'dice': applyDice(); break;
+        case 'rand': applyRand(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;
         case 'power-inline': setPower(); break;
