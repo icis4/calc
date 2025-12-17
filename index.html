@@ -54,6 +54,11 @@
       border-bottom: 1px solid rgba(255,255,255,0.08);
       background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
     }
+    .chrome-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
     .brand {
       display: flex; gap: 8px; align-items: center;
       color: var(--muted);
@@ -159,7 +164,10 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.5l8.5 4.9v9.2L12 21.5 3.5 16.6V7.4L12 2.5z" stroke="currentColor" stroke-width="1.4"/></svg>
         <span>Glass Calc</span>
       </div>
-      <div class="pill" id="toggleSci" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle scientific keys">Sci Mode</div>
+      <div class="chrome-actions">
+        <div class="pill" id="toggleAngle" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle angle mode">DEG</div>
+        <div class="pill" id="toggleSci" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle calculator mode (STD/SCI)">STD</div>
+      </div>
     </div>
 
     <section class="display">
@@ -173,6 +181,11 @@
         <button class="key op" data-action="sqrt" aria-label="Square root">√</button>
         <button class="key op" data-action="power" aria-label="Exponent">x^y</button>
         <button class="key op" data-action="percent" aria-label="Percent">%</button>
+        <button class="key op" data-action="sin" aria-label="Sine (degrees)">sin</button>
+        <button class="key op" data-action="cos" aria-label="Cosine (degrees)">cos</button>
+        <button class="key op" data-action="tan" aria-label="Tangent (degrees)">tan</button>
+        <button class="key op" data-action="pi" aria-label="Pi">π</button>
+        <button class="key op" data-action="inv" aria-label="Toggle inverse trig">INV</button>
       </div>
 
       <!-- Primary keys -->
@@ -201,7 +214,7 @@
       <button class="key op" data-action="power-inline" aria-label="Exponent inline">^</button>
     </section>
 
-    <div class="footer">Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent, s=√</div>
+    <div class="footer">Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent, s=√, i=sin, o=cos, t=tan, p=π, r=RAD/DEG</div>
   </main>
 
   <script>
@@ -212,11 +225,31 @@
     const pad = document.getElementById('pad');
     const shell = document.getElementById('calc');
     const toggleSci = document.getElementById('toggleSci');
+    const toggleAngle = document.getElementById('toggleAngle');
 
     let prev = null;       // previous numeric value (left operand)
     let current = '0';     // current input (string for easy editing)
     let operator = null;   // pending operator: '+', '-', '*', '/', '^'
     let overwrite = true;  // whether next digit should overwrite current
+    let angleMode = 'DEG'; // trig angle mode: 'DEG' or 'RAD'
+    let trigInverse = false; // when true: sin/cos/tan become arcsin/arccos/arctan
+
+    // Cookie helpers (simple persistence for last-used modes)
+    function setCookie(name, value, days = 365) {
+      const maxAge = Math.floor(days * 24 * 60 * 60);
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+    }
+
+    function getCookie(name) {
+      const target = `${encodeURIComponent(name)}=`;
+      const parts = document.cookie ? document.cookie.split('; ') : [];
+      for (const part of parts) {
+        if (part.startsWith(target)) {
+          return decodeURIComponent(part.slice(target.length));
+        }
+      }
+      return null;
+    }
 
     // Utilities
     const fmt = (n) => {
@@ -312,6 +345,101 @@
       current = fmt(r); overwrite = true; renderBottom(); renderTop();
     }
 
+    function applyTrig(kind) {
+      // Trig supports DEG and RAD modes.
+      // Math.* trig functions use radians.
+      if (current === 'Error') { return; }
+      const input = Number(current);
+      let r;
+
+      if (!trigInverse) {
+        const radians = angleMode === 'DEG' ? (input * Math.PI / 180) : input;
+        switch (kind) {
+          case 'sin': r = Math.sin(radians); break;
+          case 'cos': r = Math.cos(radians); break;
+          case 'tan': r = Math.tan(radians); break;
+          default: return;
+        }
+      } else {
+        // Inverse trig: expects a ratio input and returns an angle.
+        // Output respects the current angleMode.
+        let radiansOut;
+        switch (kind) {
+          case 'sin': radiansOut = Math.asin(input); break;
+          case 'cos': radiansOut = Math.acos(input); break;
+          case 'tan': radiansOut = Math.atan(input); break;
+          default: return;
+        }
+        r = angleMode === 'DEG' ? (radiansOut * 180 / Math.PI) : radiansOut;
+      }
+
+      current = fmt(r);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function inputPi() {
+      // Insert π as a numeric constant.
+      // We replace the current entry (like most calculator constants).
+      if (current === 'Error') { current = '0'; }
+      current = fmt(Math.PI);
+      overwrite = false;
+      renderBottom();
+      renderTop();
+    }
+
+    function toggleAngleMode() {
+      setAngleMode(angleMode === 'DEG' ? 'RAD' : 'DEG');
+      setCookie('calc_angle', angleMode);
+    }
+
+    function updateTrigButtons() {
+      const modeLabel = angleMode === 'DEG' ? 'degrees' : 'radians';
+      const trigButtons = shell.querySelectorAll('button[data-action="sin"], button[data-action="cos"], button[data-action="tan"]');
+
+      trigButtons.forEach((btn) => {
+        const action = btn.getAttribute('data-action');
+        if (!action) return;
+
+        if (!trigInverse) {
+          const name = action === 'sin' ? 'Sine' : action === 'cos' ? 'Cosine' : 'Tangent';
+          btn.textContent = action;
+          btn.setAttribute('aria-label', `${name} (${modeLabel})`);
+        } else {
+          const name = action === 'sin' ? 'Arc-sine' : action === 'cos' ? 'Arc-cosine' : 'Arc-tangent';
+          // Use a common calculator-style label
+          btn.textContent = action === 'sin' ? 'sin⁻¹' : action === 'cos' ? 'cos⁻¹' : 'tan⁻¹';
+          btn.setAttribute('aria-label', `${name} (${modeLabel})`);
+        }
+      });
+
+      const invBtn = shell.querySelector('button[data-action="inv"]');
+      if (invBtn) {
+        invBtn.classList.toggle('accent', trigInverse);
+        invBtn.setAttribute('aria-pressed', String(trigInverse));
+      }
+    }
+
+    function setAngleMode(mode) {
+      angleMode = mode === 'RAD' ? 'RAD' : 'DEG';
+      toggleAngle.textContent = angleMode;
+      toggleAngle.setAttribute('aria-pressed', String(angleMode === 'RAD'));
+      updateTrigButtons();
+    }
+
+    function toggleTrigInverse() {
+      trigInverse = !trigInverse;
+      updateTrigButtons();
+    }
+
+    function setSciMode(enabled) {
+      shell.classList.toggle('show-sci', enabled);
+      toggleSci.setAttribute('aria-pressed', String(enabled));
+      // Label shows the *other* mode (what you switch to next)
+      toggleSci.textContent = enabled ? 'STD Mode' : 'SCI Mode';
+    }
+
     function applyPercent() {
       if (current === 'Error') { return; }
       let curNum = Number(current);
@@ -356,6 +484,16 @@
       '.': () => inputDot(),
       's': () => applySqrt(),
       'S': () => applySqrt(),
+      'i': () => applyTrig('sin'),
+      'I': () => applyTrig('sin'),
+      'o': () => applyTrig('cos'),
+      'O': () => applyTrig('cos'),
+      't': () => applyTrig('tan'),
+      'T': () => applyTrig('tan'),
+      'p': () => inputPi(),
+      'P': () => inputPi(),
+      'r': () => toggleAngleMode(),
+      'R': () => toggleAngleMode(),
       'c': () => clearAll(),
       'C': () => clearAll(),
     };
@@ -385,6 +523,11 @@
         case 'del': deleteBack(); break;
         case 'equals': equals(); break;
         case 'sqrt': applySqrt(); break;
+        case 'sin': applyTrig('sin'); break;
+        case 'cos': applyTrig('cos'); break;
+        case 'tan': applyTrig('tan'); break;
+        case 'pi': inputPi(); break;
+        case 'inv': toggleTrigInverse(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;
         case 'power-inline': setPower(); break;
@@ -394,14 +537,28 @@
 
     // Toggle scientific keys visibility
     toggleSci.addEventListener('click', () => {
-      const on = shell.classList.toggle('show-sci');
-      toggleSci.setAttribute('aria-pressed', String(on));
+      const next = !shell.classList.contains('show-sci');
+      setSciMode(next);
+      setCookie('calc_sci', next ? '1' : '0');
     });
     toggleSci.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSci.click(); }
     });
 
+    toggleAngle.addEventListener('click', () => {
+      toggleAngleMode();
+    });
+    toggleAngle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAngle.click(); }
+    });
+
     // Initial render
+    // Restore last used modes (if present)
+    const savedAngle = getCookie('calc_angle');
+    const savedSci = getCookie('calc_sci');
+    setAngleMode(savedAngle === 'RAD' ? 'RAD' : 'DEG');
+    setSciMode(savedSci === '1');
+    updateTrigButtons();
     renderTop(); renderBottom();
   </script>
 </body>
