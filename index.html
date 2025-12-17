@@ -115,6 +115,14 @@
     }
     .show-sci .row-advanced { display: grid; }
 
+    .row-std-extras {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .show-sci .row-std-extras { display: none; }
+
     button.key {
       appearance: none; -webkit-appearance: none;
       border: none;
@@ -191,6 +199,12 @@
         <button class="key op" data-action="coin" aria-label="Coin flip (0 or 1)">Coin</button>
         <button class="key op" data-action="dice" aria-label="Dice roll (1 to 6)">Dice</button>
         <button class="key op" data-action="rand" aria-label="Random number (0 to 1)">Rand</button>
+      </div>
+
+      <!-- Standard-only quick functions (hidden when Sci Mode active) -->
+      <div class="row-std-extras">
+        <button class="key op" data-action="eur" data-wide="2" aria-label="Convert BGN to EUR">EUR</button>
+        <button class="key op" data-action="bgn" data-wide="2" aria-label="Convert EUR to BGN">BGN</button>
       </div>
 
       <!-- Primary keys -->
@@ -426,6 +440,28 @@
       renderTop();
     }
 
+    function applyEur() {
+      // Convert BGN (leva) to EUR using the fixed peg: 1 EUR = 1.95583 BGN
+      if (current === 'Error') { return; }
+      const EUR_BGN = 1.95583;
+      const bgn = Number(current);
+      current = fmt(bgn / EUR_BGN);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyBgn() {
+      // Convert EUR to BGN using the fixed peg: 1 EUR = 1.95583 BGN
+      if (current === 'Error') { return; }
+      const EUR_BGN = 1.95583;
+      const eur = Number(current);
+      current = fmt(eur * EUR_BGN);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
     function applyTrig(kind) {
       // Trig supports DEG and RAD modes.
       // Math.* trig functions use radians.
@@ -641,6 +677,8 @@
         case 'coin': applyCoin(); break;
         case 'dice': applyDice(); break;
         case 'rand': applyRand(); break;
+        case 'eur': applyEur(); break;
+        case 'bgn': applyBgn(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;
         case 'power-inline': setPower(); break;
