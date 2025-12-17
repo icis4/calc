@@ -1,1 +1,98 @@
-todo
+# Glass Calc (Single-File Calculator)
+
+A fully functional, responsive **single-file** calculator web app (HTML + CSS + JavaScript in one file) with a dark glassmorphic UI, keyboard support, and a scientific mode.
+
+## Run
+
+Open `index.html` in any modern browser.
+
+## Modes
+
+- **STD mode**: standard calculator keys + currency conversion.
+- **SCI mode**: scientific keys (toggle using the top-right mode pill).
+
+The **SCI/STD pill label shows the mode you will switch to**:
+
+- In STD mode, it shows **“SCI Mode”**.
+- In SCI mode, it shows **“STD Mode”**.
+
+## Display
+
+- **Top line**: current calculation context.
+- **Bottom line**: live input / result.
+
+## Features
+
+### Core
+
+- `+`, `−`, `×`, `÷`
+- Decimal input (`.`)
+- `C` (clear all)
+- `DEL` (backspace)
+
+### Scientific (SCI mode)
+
+- `√x` (square root)
+- `x^y` (exponent)
+- `%` (percent)
+- `π` (pi constant)
+- Trigonometry: `sin`, `cos`, `tan`
+- **INV** toggles:
+	- `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
+	- `ln` → `e^x`
+	- `log` → `10^x`
+- Logs:
+	- `ln(x)` (natural log)
+	- `log(x)` (base-10 log)
+- Random tools:
+	- `Coin` → random `0` or `1`
+	- `Dice` → random integer `1` to `6`
+	- `Rand` → random number in `[0.0, 1.0)`
+
+### Angle mode (DEG/RAD)
+
+The **DEG/RAD pill** changes how trig is interpreted:
+
+- Normal trig (`sin/cos/tan`): input is treated as degrees or radians.
+- Inverse trig (`sin⁻¹/cos⁻¹/tan⁻¹`): output is returned as degrees or radians.
+
+### Currency conversion (STD mode)
+
+Buttons appear only in STD mode:
+
+- `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
+- `BGN`: converts **EUR → BGN** using the same peg
+
+## Persistence
+
+The app stores your last used:
+
+- **SCI/STD mode** (`calc_sci` cookie)
+- **DEG/RAD** (`calc_angle` cookie)
+
+## Keyboard Shortcuts
+
+### Digits & basic ops
+
+- `0–9` digits
+- `.` decimal
+- `+ - * / ^` operators
+- `Enter` or `=` equals
+- `Backspace` delete
+- `Esc` clear
+
+### Scientific shortcuts
+
+- `s` → `√`
+- `i` → `sin`
+- `o` → `cos`
+- `t` → `tan`
+- `p` → `π`
+- `r` → toggle `RAD/DEG`
+- `l` → `ln` (or `e^x` when INV is ON)
+- `g` → `log` (or `10^x` when INV is ON)
+
+## Notes
+
+- `ln(x)` and `log(x)` require `x > 0`; otherwise the calculator shows `Error`.
+- Division by zero shows `Error`.
