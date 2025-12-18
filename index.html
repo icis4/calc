@@ -196,6 +196,8 @@
         <button class="key op" data-action="inv" aria-label="Toggle inverse trig">INV</button>
         <button class="key op" data-action="ln" aria-label="Natural logarithm">ln</button>
         <button class="key op" data-action="log" aria-label="Base-10 logarithm">log</button>
+        <button class="key op" data-action="expmark" aria-label="Scientific notation (e)">EXP</button>
+        <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
         <button class="key op" data-action="coin" aria-label="Coin flip (0 or 1)">Coin</button>
         <button class="key op" data-action="dice" aria-label="Dice roll (1 to 6)">Dice</button>
         <button class="key op" data-action="rand" aria-label="Random number (0 to 1)">Rand</button>
@@ -204,7 +206,8 @@
       <!-- Standard-only quick functions (hidden when Sci Mode active) -->
       <div class="row-std-extras">
         <button class="key op" data-action="eur" data-wide="2" aria-label="Convert BGN to EUR">EUR</button>
-        <button class="key op" data-action="bgn" data-wide="2" aria-label="Convert EUR to BGN">BGN</button>
+        <button class="key op" data-action="bgn" aria-label="Convert EUR to BGN">BGN</button>
+        <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
       </div>
 
       <!-- Primary keys -->
@@ -325,10 +328,75 @@
       if (overwrite) {
         current = '0.'; overwrite = false; renderBottom(); renderTop(); return;
       }
+      if (current === '-') {
+        current = '-0.';
+        overwrite = false;
+        renderBottom();
+        renderTop();
+        return;
+      }
       if (!current.includes('.')) {
         current += '.';
       }
       renderBottom(); renderTop();
+    }
+
+    function inputLeadingMinus() {
+      // Allow typing a negative number naturally (e.g., "-5" or "5 * -3").
+      // Only triggers when we're at the start of an entry.
+      if (current === 'Error') { setCurrent('0'); }
+      if (overwrite || current === '0') {
+        current = '-';
+        overwrite = false;
+        renderBottom();
+        renderTop();
+        return true;
+      }
+      return false;
+    }
+
+    function maybeInputExpSign(sign) {
+      // When entering scientific notation, allow +/- to apply to the exponent
+      // instead of acting as an operator.
+      // Valid forms we build: 5e3, 5e-4, 5e+7
+      const idx = current.toLowerCase().indexOf('e');
+      if (idx === -1) return false;
+      const expPart = current.slice(idx + 1);
+      if (expPart === '') {
+        current += sign;
+        overwrite = false;
+        renderBottom(); renderTop();
+        return true;
+      }
+      if (expPart === '-' && sign === '+') {
+        current = current.slice(0, idx + 1);
+        overwrite = false;
+        renderBottom(); renderTop();
+        return true;
+      }
+      if (expPart === '+' && sign === '-') {
+        current = current.slice(0, idx + 1) + '-';
+        overwrite = false;
+        renderBottom(); renderTop();
+        return true;
+      }
+      return false;
+    }
+
+    function inputExpMarker() {
+      // Adds an exponent marker so users can enter 10e3 or 5.6e-4.
+      // JS Number() can parse this format directly.
+      if (current === 'Error') { setCurrent('0'); }
+      if (current.toLowerCase().includes('e')) { return; }
+
+      if (overwrite) {
+        current = '1e';
+        overwrite = false;
+      } else {
+        current += 'e';
+      }
+      renderBottom();
+      renderTop();
     }
 
     function setOperator(op) {
@@ -458,6 +526,23 @@
       const eur = Number(current);
       current = fmt(eur * EUR_BGN);
       overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyNegate() {
+      // Toggle the sign of the current entry (e.g., 42 -> -42, -3.5 -> 3.5)
+      if (current === 'Error') { return; }
+      if (current === '0') { return; }
+
+      if (current === '-') {
+        setCurrent('0');
+        return;
+      }
+
+      current = current.startsWith('-') ? current.slice(1) : `-${current}`;
+      // Treat as an edit so subsequent digits append naturally.
+      overwrite = false;
       renderBottom();
       renderTop();
     }
@@ -622,6 +707,8 @@
       'Escape': () => clearAll(),
       'Backspace': () => deleteBack(),
       '.': () => inputDot(),
+      'e': () => inputExpMarker(),
+      'E': () => inputExpMarker(),
       's': () => applySqrt(),
       'S': () => applySqrt(),
       'i': () => applyTrig('sin'),
@@ -638,6 +725,9 @@
       'L': () => (trigInverse ? applyExp() : applyLn()),
       'g': () => (trigInverse ? applyPow10() : applyLog10()),
       'G': () => (trigInverse ? applyPow10() : applyLog10()),
+      'n': () => applyNegate(),
+      'N': () => applyNegate(),
+      'F9': () => applyNegate(),
       'c': () => clearAll(),
       'C': () => clearAll(),
     };
@@ -645,6 +735,19 @@
     window.addEventListener('keydown', (e) => {
       const { key } = e;
       if (key >= '0' && key <= '9') { inputDigit(key); return; }
+
+      // If we are in exponent entry (e.g., "5e"), treat +/- as exponent sign.
+      if ((key === '+' || key === '-') && maybeInputExpSign(key)) {
+        e.preventDefault();
+        return;
+      }
+
+      // Unary minus: allow "-" to start a negative number entry.
+      if (key === '-' && inputLeadingMinus()) {
+        e.preventDefault();
+        return;
+      }
+
       const handler = keyMap[key];
       if (handler) { e.preventDefault(); handler(); }
     });
@@ -660,7 +763,16 @@
 
       if (digit) { inputDigit(digit); return; }
       if (dot) { inputDot(); return; }
-      if (op) { setOperator(op); return; }
+      if (op) {
+        // Allow + / - buttons to act as exponent sign when entering scientific notation.
+        if ((op === '+' || op === '-') && maybeInputExpSign(op)) return;
+
+        // Unary minus via on-screen "−" key when starting an entry.
+        if (op === '-' && inputLeadingMinus()) return;
+
+        setOperator(op);
+        return;
+      }
 
       switch (action) {
         case 'clear': clearAll(); break;
@@ -674,11 +786,13 @@
         case 'inv': toggleTrigInverse(); break;
         case 'ln': trigInverse ? applyExp() : applyLn(); break;
         case 'log': trigInverse ? applyPow10() : applyLog10(); break;
+        case 'expmark': inputExpMarker(); break;
         case 'coin': applyCoin(); break;
         case 'dice': applyDice(); break;
         case 'rand': applyRand(); break;
         case 'eur': applyEur(); break;
         case 'bgn': applyBgn(); break;
+        case 'negate': applyNegate(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;
         case 'power-inline': setPower(); break;
