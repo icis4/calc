@@ -26,6 +26,7 @@ The **SCI/STD pill label shows the mode you will switch to**:
 ### Core
 
 - `+`, `−`, `×`, `÷`
+- `+/-` (toggle sign)
 - Decimal input (`.`)
 - `C` (clear all)
 - `DEL` (backspace)
@@ -36,6 +37,7 @@ The **SCI/STD pill label shows the mode you will switch to**:
 - `x^y` (exponent)
 - `%` (percent)
 - `π` (pi constant)
+- `EXP` (scientific notation entry, e.g. `5.6e-4`)
 - Trigonometry: `sin`, `cos`, `tan`
 - **INV** toggles:
 	- `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
@@ -63,6 +65,11 @@ Buttons appear only in STD mode:
 - `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
 - `BGN`: converts **EUR → BGN** using the same peg
 
+### Negative number entry
+
+- You can type a leading `-` to start a negative number (e.g. `-5`, or `5 * -3`).
+- When entering `EXP` notation (e.g. `5e`), `+` / `-` applies to the exponent sign.
+
 ## Persistence
 
 The app stores your last used:
@@ -89,8 +96,13 @@ The app stores your last used:
 - `t` → `tan`
 - `p` → `π`
 - `r` → toggle `RAD/DEG`
+- `e` → `EXP` (enter scientific notation)
 - `l` → `ln` (or `e^x` when INV is ON)
 - `g` → `log` (or `10^x` when INV is ON)
+
+### Sign toggle
+
+- `n` / `F9` → `+/-`
 
 ## Notes
 
