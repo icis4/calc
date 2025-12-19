@@ -94,6 +94,8 @@ Buttons appear only in STD mode:
 - `00`: rounds the current value to **2 decimals**
 - `000`: rounds the current value to **3 decimals**
 
+For `00`: ако третият знак след десетичната запетая е по-голям от нула, вторият знак след десетичната запетая се увеличава с една единица.
+
 ### Negative number entry
 
 - You can type a leading `-` to start a negative number (e.g. `-5`, or `5 * -3`).
