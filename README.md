@@ -6,6 +6,12 @@ A fully functional, responsive **single-file** calculator web app (HTML + CSS + 
 
 Open `index.html` in any modern browser.
 
+For the **Help** modal (which loads `/README.md`) to work reliably, run a local server in this folder and open the app via HTTP:
+
+```bash
+python -m http.server
+```
+
 ## Modes
 
 - **STD mode**: standard calculator keys + VAT tools + currency conversion.
@@ -20,6 +26,19 @@ The **SCI/STD pill label shows the mode you will switch to**:
 
 - **Top line**: current calculation context.
 - **Bottom line**: live input / result.
+
+## Log panel
+
+- The Log panel is **hidden by default**.
+- Use the **LOG** pill (left of **DEG**) to show/hide it.
+- The panel appears to the right of the calculator (stacks below on small screens).
+- The log keeps the **last 50 values** and restores them on reload.
+- **Double-click** a log item to copy its value to the calculator display.
+
+## Help
+
+- Click **Help** (left of **LOG**) to open a modal that renders this README (loaded from `/README.md`).
+- If you opened `index.html` via `file://`, some browsers will block fetching `/README.md`; use the local server command above.
 
 ## Features
 
@@ -85,6 +104,8 @@ The app stores your last used:
 
 - **SCI/STD mode** (`calc_sci` cookie)
 - **DEG/RAD** (`calc_angle` cookie)
+- **Log panel visibility** (`calc_log` cookie)
+- **Log entries** (saved in `localStorage` as `calc_log_entries`)
 
 ## Keyboard Shortcuts
 
