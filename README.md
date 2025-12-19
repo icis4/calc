@@ -123,6 +123,8 @@ The app stores your last used:
 - `Enter` or `=` equals
 - `Backspace` delete
 - `Esc` clear
+- `Ctrl+C` copies the current value
+- `Ctrl+V` pastes a number into the calculator
 
 ### Scientific shortcuts
 
