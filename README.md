@@ -71,6 +71,8 @@ Buttons appear only in STD mode:
 
 - `+VAT`: adds **20% VAT** (net → gross): $x \to x \cdot 1.2$
 - `-VAT`: removes **20% VAT** (gross → net): $x \to x / 1.2$
+- `00`: rounds the current value to **2 decimals**
+- `000`: rounds the current value to **3 decimals**
 
 ### Negative number entry
 

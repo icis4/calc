@@ -213,8 +213,10 @@
 
       <!-- Standard-only VAT helpers (hidden when Sci Mode active) -->
       <div class="row-std-vat">
-        <button class="key op" data-wide="2" data-action="vat-add" aria-label="Add VAT (20%)">+VAT</button>
-        <button class="key op" data-wide="2" data-action="vat-sub" aria-label="Remove VAT (20%)">-VAT</button>
+        <button class="key op" data-action="vat-add" aria-label="Add VAT (20%)">+VAT</button>
+        <button class="key op" data-action="vat-sub" aria-label="Remove VAT (20%)">-VAT</button>
+        <button class="key op" data-action="round-2" aria-label="Round to 2 decimals">00</button>
+        <button class="key op" data-action="round-3" aria-label="Round to 3 decimals">000</button>
       </div>
 
       <!-- Standard-only quick functions (hidden when Sci Mode active) -->
@@ -610,6 +612,17 @@
       renderTop();
     }
 
+    function applyRound(decimals) {
+      // Round current value to a fixed number of decimals.
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      if (!isFinite(x)) { setCurrent('Error'); return; }
+      current = x.toFixed(decimals);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
     function applyNegate() {
       // Toggle the sign of the current entry (e.g., 42 -> -42, -3.5 -> 3.5)
       if (current === 'Error') { return; }
@@ -874,6 +887,8 @@
         case 'bgn': applyBgn(); break;
         case 'vat-add': applyVatAdd(); break;
         case 'vat-sub': applyVatSub(); break;
+        case 'round-2': applyRound(2); break;
+        case 'round-3': applyRound(3); break;
         case 'negate': applyNegate(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;
