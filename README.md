@@ -124,7 +124,7 @@ The app stores your last used:
 - `Backspace` delete
 - `Esc` clear
 - `Ctrl+C` copies the current value
-- `Ctrl+V` pastes a number into the calculator
+- `Ctrl+V` pastes a number into the calculator (supports scientific notation like `1.0e+10`, `2e5`, `-10e-12`)
 
 ### Scientific shortcuts
 
