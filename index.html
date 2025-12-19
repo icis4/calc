@@ -123,6 +123,14 @@
     }
     .show-sci .row-std-extras { display: none; }
 
+    .row-std-vat {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .show-sci .row-std-vat { display: none; }
+
     button.key {
       appearance: none; -webkit-appearance: none;
       border: none;
@@ -203,37 +211,44 @@
         <button class="key op" data-action="rand" aria-label="Random number (0 to 1)">Rand</button>
       </div>
 
+      <!-- Standard-only VAT helpers (hidden when Sci Mode active) -->
+      <div class="row-std-vat">
+        <button class="key op" data-wide="2" data-action="vat-add" aria-label="Add VAT (20%)">+VAT</button>
+        <button class="key op" data-wide="2" data-action="vat-sub" aria-label="Remove VAT (20%)">-VAT</button>
+      </div>
+
       <!-- Standard-only quick functions (hidden when Sci Mode active) -->
       <div class="row-std-extras">
-        <button class="key op" data-action="eur" data-wide="2" aria-label="Convert BGN to EUR">EUR</button>
+        <button class="key op" data-action="eur" aria-label="Convert BGN to EUR">EUR</button>
         <button class="key op" data-action="bgn" aria-label="Convert EUR to BGN">BGN</button>
+        <button class="key op" data-action="percent" aria-label="Percent">%</button>
         <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
       </div>
 
       <!-- Primary keys -->
       <button class="key danger" data-action="clear" aria-label="Clear">C</button>
       <button class="key warning" data-action="del" aria-label="Delete">DEL</button>
+      <button class="key op" data-action="power-inline" aria-label="Exponent inline">^</button>
       <button class="key op" data-op="/" aria-label="Divide">÷</button>
-      <button class="key op" data-op="*" aria-label="Multiply">×</button>
 
       <button class="key" data-digit="7">7</button>
       <button class="key" data-digit="8">8</button>
       <button class="key" data-digit="9">9</button>
-      <button class="key op" data-op="-" aria-label="Subtract">−</button>
+      <button class="key op" data-op="*" aria-label="Multiply">×</button>
 
       <button class="key" data-digit="4">4</button>
       <button class="key" data-digit="5">5</button>
       <button class="key" data-digit="6">6</button>
-      <button class="key op" data-op="+" aria-label="Add">+</button>
+      <button class="key op" data-op="-" aria-label="Subtract">−</button>
 
       <button class="key" data-digit="1">1</button>
       <button class="key" data-digit="2">2</button>
       <button class="key" data-digit="3">3</button>
-      <button class="key accent" data-action="equals" aria-label="Equals">=</button>
+      <button class="key op" data-op="+" aria-label="Add">+</button>
 
-      <button class="key" data-wide="2" data-digit="0">0</button>
+      <button class="key" data-digit="0">0</button>
       <button class="key" data-dot="." aria-label="Decimal">.</button>
-      <button class="key op" data-action="power-inline" aria-label="Exponent inline">^</button>
+      <button class="key accent" data-wide="2" data-action="equals" aria-label="Equals">=</button>
     </section>
 
     <div class="footer">Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent, s=√, i=sin, o=cos, t=tan, p=π, r=RAD/DEG</div>
@@ -274,25 +289,68 @@
     }
 
     // Utilities
+    const MAX_DISPLAY_LEN = 18;
+
     const fmt = (n) => {
       // format numeric output with limited precision, but keep typed decimals
       if (typeof n === 'string') return n;
       if (!isFinite(n)) return 'Error';
-      const s = Number(n);
-      // Avoid scientific notation for typical calculator ranges
-      return (Math.round(s * 1e12) / 1e12).toString();
+      const v = Number(n);
+      // Normalize -0 to 0
+      const normalized = Object.is(v, -0) ? 0 : v;
+      // Use a reasonable precision for calculator results.
+      // (Display compaction is handled separately by formatForDisplay.)
+      const s = normalized.toPrecision(15);
+      // Trim trailing zeros for non-exponential formats.
+      if (!/[eE]/.test(s)) {
+        return s.replace(/\.0+$/, '').replace(/(\.[0-9]*?)0+$/, '$1');
+      }
+      return s.replace('e+', 'e');
     };
+
+    function formatForDisplay(text) {
+      // Keep in-progress inputs readable (don't rewrite partial tokens).
+      if (text == null) return '0';
+      if (text === 'Error') return 'Error';
+
+      const s = String(text);
+      if (s.length <= MAX_DISPLAY_LEN) return s;
+
+      const lower = s.toLowerCase();
+      // Avoid altering incomplete scientific notation entry.
+      if (lower.endsWith('e') || lower.endsWith('e-') || lower.endsWith('e+')) return s;
+      if (s === '-' || s.endsWith('.')) return s;
+
+      const n = Number(s);
+      if (!isFinite(n)) return 'Error';
+
+      // Create a compact exponential representation sized to MAX_DISPLAY_LEN.
+      // Example: 8.1300813e3
+      const expRaw = n.toExponential();
+      const expPart = expRaw.slice(expRaw.toLowerCase().indexOf('e'));
+      const expLen = expPart.replace('e+', 'e').length;
+      const maxMantissaTotal = Math.max(1, MAX_DISPLAY_LEN - expLen);
+
+      // Mantissa is like "d.dddd" or "d".
+      // If we include a decimal point, we need at least 2 chars ("d.").
+      const fracDigits = Math.max(0, maxMantissaTotal - 2);
+      const compact = n.toExponential(fracDigits).replace('e+', 'e');
+      if (compact.length <= MAX_DISPLAY_LEN) return compact;
+
+      // Fallback: fewer digits.
+      return n.toExponential(Math.max(0, fracDigits - 2)).replace('e+', 'e');
+    }
 
     const symbolFor = (op) => ({ '+': '+', '-': '−', '*': '×', '/': '÷', '^': '^' }[op] || '');
 
     function renderTop() {
       const opSym = symbolFor(operator);
-      const left = prev != null ? fmt(prev) : '';
-      const right = current != null ? current : '';
+      const left = prev != null ? formatForDisplay(fmt(prev)) : '';
+      const right = current != null ? formatForDisplay(current) : '';
       lineTop.textContent = operator ? `${left} ${opSym} ${right}` : left || '';
     }
     function renderBottom() {
-      lineBottom.textContent = current ?? '0';
+      lineBottom.textContent = formatForDisplay(current ?? '0');
     }
 
     function setCurrent(val) {
@@ -525,6 +583,28 @@
       const EUR_BGN = 1.95583;
       const eur = Number(current);
       current = fmt(eur * EUR_BGN);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyVatAdd() {
+      // Add VAT (default 20%): net -> gross
+      if (current === 'Error') { return; }
+      const VAT = 0.20;
+      const x = Number(current);
+      current = fmt(x * (1 + VAT));
+      overwrite = true;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyVatSub() {
+      // Remove VAT (default 20%): gross -> net
+      if (current === 'Error') { return; }
+      const VAT = 0.20;
+      const x = Number(current);
+      current = fmt(x / (1 + VAT));
       overwrite = true;
       renderBottom();
       renderTop();
@@ -792,6 +872,8 @@
         case 'rand': applyRand(); break;
         case 'eur': applyEur(); break;
         case 'bgn': applyBgn(); break;
+        case 'vat-add': applyVatAdd(); break;
+        case 'vat-sub': applyVatSub(); break;
         case 'negate': applyNegate(); break;
         case 'percent': applyPercent(); break;
         case 'power': setPower(); break;

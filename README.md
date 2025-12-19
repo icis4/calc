@@ -8,7 +8,7 @@ Open `index.html` in any modern browser.
 
 ## Modes
 
-- **STD mode**: standard calculator keys + currency conversion.
+- **STD mode**: standard calculator keys + VAT tools + currency conversion.
 - **SCI mode**: scientific keys (toggle using the top-right mode pill).
 
 The **SCI/STD pill label shows the mode you will switch to**:
@@ -40,16 +40,16 @@ The **SCI/STD pill label shows the mode you will switch to**:
 - `EXP` (scientific notation entry, e.g. `5.6e-4`)
 - Trigonometry: `sin`, `cos`, `tan`
 - **INV** toggles:
-	- `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
-	- `ln` → `e^x`
-	- `log` → `10^x`
+  - `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
+  - `ln` → `e^x`
+  - `log` → `10^x`
 - Logs:
-	- `ln(x)` (natural log)
-	- `log(x)` (base-10 log)
+  - `ln(x)` (natural log)
+  - `log(x)` (base-10 log)
 - Random tools:
-	- `Coin` → random `0` or `1`
-	- `Dice` → random integer `1` to `6`
-	- `Rand` → random number in `[0.0, 1.0)`
+  - `Coin` → random `0` or `1`
+  - `Dice` → random integer `1` to `6`
+  - `Rand` → random number in `[0.0, 1.0)`
 
 ### Angle mode (DEG/RAD)
 
@@ -64,6 +64,13 @@ Buttons appear only in STD mode:
 
 - `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
 - `BGN`: converts **EUR → BGN** using the same peg
+
+### VAT (STD mode)
+
+Buttons appear only in STD mode:
+
+- `+VAT`: adds **20% VAT** (net → gross): $x \to x \cdot 1.2$
+- `-VAT`: removes **20% VAT** (gross → net): $x \to x / 1.2$
 
 ### Negative number entry
 
@@ -108,3 +115,9 @@ The app stores your last used:
 
 - `ln(x)` and `log(x)` require `x > 0`; otherwise the calculator shows `Error`.
 - Division by zero shows `Error`.
+- Very long results are automatically **compacted for display** (often into a shorter `...e...` form) so they fit the screen.
+
+## Layout
+
+- The `0` key is single-width.
+- The `=` key spans two columns.
