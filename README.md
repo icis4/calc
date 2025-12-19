@@ -84,6 +84,7 @@ Buttons appear only in STD/TRZ mode:
 
 - `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
 - `BGN`: converts **EUR → BGN** using the same peg
+- Results are rounded to **2 decimals**.
 
 ### VAT (STD/TRZ mode)
 
@@ -91,7 +92,8 @@ Buttons appear only in STD/TRZ mode:
 
 - `+VAT`: adds **20% VAT** (net → gross): $x \to x \cdot 1.2$
 - `-VAT`: removes **20% VAT** (gross → net): $x \to x / 1.2$
-- `00`: rounds the current value to **2 decimals** — ако третият знак след десетичната запетая е по-голям от нула, вторият знак след десетичната запетая се увеличава с една единица.
+- `+VAT` / `-VAT` results are rounded to **2 decimals**.
+- `00`: rounds the current value to **2 decimals**
 - `000`: rounds the current value to **3 decimals**
 
 ### Negative number entry

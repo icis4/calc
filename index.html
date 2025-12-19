@@ -962,7 +962,8 @@
       if (current === 'Error') { return; }
       const EUR_BGN = 1.95583;
       const bgn = Number(current);
-      current = fmt(bgn / EUR_BGN);
+      if (!isFinite(bgn)) { setCurrent('Error'); return; }
+      current = (bgn / EUR_BGN).toFixed(2);
       overwrite = true;
       renderBottom();
       renderTop();
@@ -974,7 +975,8 @@
       if (current === 'Error') { return; }
       const EUR_BGN = 1.95583;
       const eur = Number(current);
-      current = fmt(eur * EUR_BGN);
+      if (!isFinite(eur)) { setCurrent('Error'); return; }
+      current = (eur * EUR_BGN).toFixed(2);
       overwrite = true;
       renderBottom();
       renderTop();
@@ -986,7 +988,8 @@
       if (current === 'Error') { return; }
       const VAT = 0.20;
       const x = Number(current);
-      current = fmt(x * (1 + VAT));
+      if (!isFinite(x)) { setCurrent('Error'); return; }
+      current = (x * (1 + VAT)).toFixed(2);
       overwrite = true;
       renderBottom();
       renderTop();
@@ -998,7 +1001,8 @@
       if (current === 'Error') { return; }
       const VAT = 0.20;
       const x = Number(current);
-      current = fmt(x / (1 + VAT));
+      if (!isFinite(x)) { setCurrent('Error'); return; }
+      current = (x / (1 + VAT)).toFixed(2);
       overwrite = true;
       renderBottom();
       renderTop();
@@ -1011,78 +1015,11 @@
       const x = Number(current);
       if (!isFinite(x)) { setCurrent('Error'); return; }
 
-      if (decimals === 2) {
-        current = round00(String(current));
-      } else {
-        current = x.toFixed(decimals);
-      }
+      current = x.toFixed(decimals);
       overwrite = true;
       renderBottom();
       renderTop();
       appendLogValue(current, `${decimals === 2 ? '00' : '000'} ${fmt(x)}`);
-    }
-
-    function round00(input) {
-      // Bulgarian rounding rule for the "00" key:
-      // If the 3rd digit after the decimal point is > 0,
-      // increment the 2nd digit after the decimal point by 1.
-      // (Effectively: keep 2 decimals, but round up if the 3rd decimal digit is non-zero.)
-      let s = String(input ?? '').trim();
-      if (!s || s === 'Error') return '0.00';
-
-      let sign = '';
-      if (s.startsWith('-')) {
-        sign = '-';
-        s = s.slice(1);
-      } else if (s.startsWith('+')) {
-        s = s.slice(1);
-      }
-
-      // Fallback for scientific notation or unexpected formats.
-      if (/[eE]/.test(s)) {
-        const n = Number((sign || '') + s);
-        if (!isFinite(n)) return '0.00';
-        const abs = Math.abs(n);
-        const fixed3 = abs.toFixed(3);
-        const third = fixed3.split('.')[1]?.[2] ?? '0';
-        const base2 = abs.toFixed(2);
-        let value100 = BigInt(base2.replace('.', ''));
-        if (third !== '0') value100 += 1n;
-        if (value100 === 0n) sign = '';
-        let digits = value100.toString();
-        const fracOut = digits.slice(-2).padStart(2, '0');
-        const intOut = digits.length > 2 ? digits.slice(0, -2) : '0';
-        return (sign ? '-' : '') + intOut + '.' + fracOut;
-      }
-
-      if (s.startsWith('.')) s = '0' + s;
-      const parts = s.split('.');
-      let intPart = parts[0] || '0';
-      let fracPart = parts[1] || '';
-
-      if (!/^\d+$/.test(intPart)) {
-        const n = Number((sign || '') + s);
-        if (!isFinite(n)) return '0.00';
-        return (Object.is(n, -0) ? 0 : n).toFixed(2);
-      }
-      if (fracPart && !/^\d+$/.test(fracPart)) {
-        const n = Number((sign || '') + s);
-        if (!isFinite(n)) return '0.00';
-        return (Object.is(n, -0) ? 0 : n).toFixed(2);
-      }
-
-      const padded3 = (fracPart + '000').slice(0, 3);
-      const firstTwo = padded3.slice(0, 2);
-      const third = padded3[2] || '0';
-
-      let value100 = BigInt(intPart) * 100n + BigInt(firstTwo);
-      if (third !== '0') value100 += 1n;
-      if (value100 === 0n) sign = '';
-
-      let digits = value100.toString();
-      const fracOut = digits.slice(-2).padStart(2, '0');
-      const intOut = digits.length > 2 ? digits.slice(0, -2) : '0';
-      return (sign ? '-' : '') + intOut + '.' + fracOut;
     }
 
     function applyNegate() {
