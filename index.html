@@ -67,6 +67,31 @@
       letter-spacing: 0.2px;
     }
 
+    .log-actions {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .log-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 var(--shadow-2);
+      transition: 140ms ease;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .log-btn:hover { transform: translateY(-1px); color: var(--text); }
+
     .log-list {
       padding: 12px;
       display: grid;
@@ -82,12 +107,36 @@
       box-shadow: inset 0 1px 0 var(--shadow-2);
       padding: 10px 12px;
       color: var(--text);
-      text-align: right;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       cursor: default;
       user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .log-item-action {
+      color: var(--muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .log-item-value {
+      color: var(--text);
+      font-weight: 700;
+      text-align: right;
+      flex: 0 0 auto;
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .log-hint {
@@ -363,7 +412,7 @@
         <div class="pill" id="toggleHelp" tabindex="0" role="button" aria-pressed="false" aria-label="Open help">Help</div>
         <div class="pill" id="toggleLog" tabindex="0" role="button" aria-pressed="false" aria-label="Show/hide log panel">LOG</div>
         <div class="pill" id="toggleAngle" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle angle mode">DEG</div>
-        <div class="pill" id="toggleSci" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle calculator mode (STD/SCI)">STD</div>
+        <div class="pill" id="toggleSci" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle calculator mode (STD/TRZ/SCI)">STD</div>
       </div>
     </div>
 
@@ -438,7 +487,13 @@
     </main>
 
     <aside class="log-panel" aria-label="Log panel">
-      <div class="log-header">Log</div>
+      <div class="log-header">
+        <div>Log</div>
+        <div class="log-actions">
+          <button class="log-btn" id="logExport" type="button" aria-label="Export log to CSV">Export CSV</button>
+          <button class="log-btn" id="logClear" type="button" aria-label="Clear log">Clear</button>
+        </div>
+      </div>
       <div class="log-list" id="logList" aria-live="polite" aria-atomic="false"></div>
       <div class="log-hint">Double-click an item to copy to display</div>
     </aside>
@@ -468,6 +523,8 @@
     const toggleAngle = document.getElementById('toggleAngle');
     const footerHelp = document.getElementById('footerHelp');
     const logList = document.getElementById('logList');
+    const logExport = document.getElementById('logExport');
+    const logClear = document.getElementById('logClear');
     const helpModal = document.getElementById('helpModal');
     const helpBody = document.getElementById('helpBody');
     const helpClose = document.getElementById('helpClose');
@@ -478,15 +535,20 @@
     let overwrite = true;  // whether next digit should overwrite current
     let angleMode = 'DEG'; // trig angle mode: 'DEG' or 'RAD'
     let trigInverse = false; // when true: sin/cos/tan become arcsin/arccos/arctan
+    let calcMode = 'STD';  // 'STD' | 'SCI' | 'TRZ' (TRZ duplicates STD)
 
     const LOG_STORAGE_KEY = 'calc_log_entries';
     const LOG_MAX_ENTRIES = 50;
-    const logEntries = [];
+    const logEntries = []; // array of { action: string, value: string }
 
     function saveLogEntries() {
       try {
         // Use localStorage (more capacity than cookies) for log persistence.
-        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logEntries.slice(0, LOG_MAX_ENTRIES)));
+        const payload = logEntries.slice(0, LOG_MAX_ENTRIES).map((e) => ({
+          action: String(e?.action ?? ''),
+          value: String(e?.value ?? ''),
+        }));
+        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(payload));
       } catch {
         // Ignore storage failures (private mode, quota, disabled storage).
       }
@@ -499,8 +561,17 @@
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return;
         logEntries.length = 0;
-        for (const v of parsed.slice(0, LOG_MAX_ENTRIES)) {
-          logEntries.push(String(v));
+        for (const item of parsed.slice(0, LOG_MAX_ENTRIES)) {
+          // Backward compatibility: older versions stored strings.
+          if (typeof item === 'string' || typeof item === 'number') {
+            logEntries.push({ action: '', value: String(item) });
+            continue;
+          }
+          if (item && typeof item === 'object') {
+            const action = String(item.action ?? '');
+            const value = String(item.value ?? item.v ?? '');
+            if (value) logEntries.push({ action, value });
+          }
         }
         renderLog();
       } catch {
@@ -508,10 +579,11 @@
       }
     }
 
-    function appendLogValue(valueText) {
-      const s = String(valueText ?? '');
-      if (!s || s === 'Error') return;
-      logEntries.unshift(s);
+    function appendLogValue(valueText, actionText = '') {
+      const value = String(valueText ?? '');
+      const action = String(actionText ?? '');
+      if (!value || value === 'Error') return;
+      logEntries.unshift({ action, value });
       // Keep the log bounded.
       if (logEntries.length > LOG_MAX_ENTRIES) logEntries.length = LOG_MAX_ENTRIES;
       renderLog();
@@ -524,8 +596,17 @@
       for (const entry of logEntries) {
         const div = document.createElement('div');
         div.className = 'log-item';
-        div.textContent = formatForDisplay(entry);
-        div.setAttribute('data-value', entry);
+        const actionEl = document.createElement('span');
+        actionEl.className = 'log-item-action';
+        actionEl.textContent = entry.action ? entry.action : '';
+
+        const valueEl = document.createElement('span');
+        valueEl.className = 'log-item-value';
+        valueEl.textContent = formatForDisplay(entry.value);
+
+        div.appendChild(actionEl);
+        div.appendChild(valueEl);
+        div.setAttribute('data-value', entry.value);
         logList.appendChild(div);
       }
     }
@@ -538,6 +619,38 @@
       overwrite = true;
       lineTop.textContent = '';
       setCurrent(s);
+    }
+
+    function clearLog() {
+      logEntries.length = 0;
+      renderLog();
+      saveLogEntries();
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? '');
+      // Quote fields that contain a quote, comma, or newline.
+      if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function exportLogCsv() {
+      const rows = [];
+      rows.push(['Action', 'Value'].map(csvEscape).join(','));
+      for (const entry of logEntries) {
+        rows.push([csvEscape(entry.action), csvEscape(entry.value)].join(','));
+      }
+
+      const csv = rows.join('\r\n') + '\r\n';
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'calc-log.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     }
 
     // Cookie helpers (simple persistence for last-used modes)
@@ -749,7 +862,7 @@
       const expr = `${fmt(prev)} ${symbolFor(operator)} ${fmt(curNum)}`;
       prev = null; operator = null; current = fmt(r); overwrite = true;
       lineTop.textContent = expr; renderBottom();
-      appendLogValue(current);
+      appendLogValue(current, expr);
     }
 
     function applySqrt() {
@@ -758,7 +871,7 @@
       if (curNum < 0) { setCurrent('Error'); return; }
       const r = Math.sqrt(curNum);
       current = fmt(r); overwrite = true; renderBottom(); renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `√ ${fmt(curNum)}`);
     }
 
     function applyLn() {
@@ -770,7 +883,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `ln ${fmt(x)}`);
     }
 
     function applyLog10() {
@@ -783,7 +896,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `log ${fmt(x)}`);
     }
 
     function applyExp() {
@@ -794,7 +907,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `e^ ${fmt(x)}`);
     }
 
     function applyPow10() {
@@ -805,7 +918,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `10^ ${fmt(x)}`);
     }
 
     function applyCoin() {
@@ -816,7 +929,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, 'Coin');
     }
 
     function applyDice() {
@@ -827,7 +940,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, 'Dice');
     }
 
     function applyRand() {
@@ -841,7 +954,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, 'Rand');
     }
 
     function applyEur() {
@@ -853,7 +966,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `${fmt(bgn)} BGN`);
     }
 
     function applyBgn() {
@@ -865,7 +978,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `${fmt(eur)} EUR`);
     }
 
     function applyVatAdd() {
@@ -877,7 +990,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `+VAT ${fmt(x)}`);
     }
 
     function applyVatSub() {
@@ -889,7 +1002,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `-VAT ${fmt(x)}`);
     }
 
     function applyRound(decimals) {
@@ -901,7 +1014,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, `${decimals === 2 ? '00' : '000'} ${fmt(x)}`);
     }
 
     function applyNegate() {
@@ -927,6 +1040,8 @@
       if (current === 'Error') { return; }
       const input = Number(current);
       let r;
+      const modeSuffix = angleMode === 'DEG' ? '°' : ' rad';
+      const label = !trigInverse ? kind : (kind === 'sin' ? 'sin⁻¹' : kind === 'cos' ? 'cos⁻¹' : 'tan⁻¹');
 
       if (!trigInverse) {
         const radians = angleMode === 'DEG' ? (input * Math.PI / 180) : input;
@@ -953,7 +1068,7 @@
       overwrite = true;
       renderBottom();
       renderTop();
-      appendLogValue(current);
+      appendLogValue(current, trigInverse ? `${label} ${fmt(input)}` : `${label} ${fmt(input)}${modeSuffix}`);
     }
 
     function inputPi() {
@@ -1033,11 +1148,20 @@
       updateTrigButtons();
     }
 
-    function setSciMode(enabled) {
-      shell.classList.toggle('show-sci', enabled);
-      toggleSci.setAttribute('aria-pressed', String(enabled));
-      // Label shows the *other* mode (what you switch to next)
-      toggleSci.textContent = enabled ? 'STD Mode' : 'SCI Mode';
+    function setCalcMode(mode) {
+      const m = String(mode ?? '').toUpperCase();
+      calcMode = (m === 'SCI' || m === 'TRZ' || m === 'STD') ? m : 'STD';
+
+      shell.classList.toggle('show-sci', calcMode === 'SCI');
+      shell.classList.toggle('show-trz', calcMode === 'TRZ');
+
+      // Keep aria-pressed semantics for the old two-state behavior (pressed == SCI).
+      toggleSci.setAttribute('aria-pressed', String(calcMode === 'SCI'));
+
+      // Label shows the current mode.
+      toggleSci.textContent = calcMode;
+      toggleSci.setAttribute('aria-label', `Calculator mode: ${calcMode}. Click to switch.`);
+
       updateFooterHelpText();
     }
 
@@ -1176,9 +1300,9 @@
       if (!footerHelp) return;
 
       const base = 'Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent';
-      const isSci = shell.classList.contains('show-sci');
+      const isSci = calcMode === 'SCI';
       if (!isSci) {
-        footerHelp.textContent = `${base}  (STD: VAT, rounding, EUR/BGN via buttons)`;
+        footerHelp.textContent = `${base}  (${calcMode}: VAT, rounding, EUR/BGN via buttons)`;
         return;
       }
 
@@ -1341,6 +1465,14 @@
       });
     }
 
+    if (logExport) {
+      logExport.addEventListener('click', () => exportLogCsv());
+    }
+
+    if (logClear) {
+      logClear.addEventListener('click', () => clearLog());
+    }
+
     // Toggle log panel visibility (persistent)
     if (toggleLog) {
       toggleLog.addEventListener('click', () => {
@@ -1371,11 +1503,13 @@
       });
     }
 
-    // Toggle scientific keys visibility
+    // Toggle calculator mode (STD -> TRZ -> SCI -> STD)
     toggleSci.addEventListener('click', () => {
-      const next = !shell.classList.contains('show-sci');
-      setSciMode(next);
-      setCookie('calc_sci', next ? '1' : '0');
+      const next = calcMode === 'STD' ? 'TRZ' : (calcMode === 'TRZ' ? 'SCI' : 'STD');
+      setCalcMode(next);
+      setCookie('calc_mode', calcMode);
+      // Backward-compatible cookie for older versions.
+      setCookie('calc_sci', calcMode === 'SCI' ? '1' : '0');
     });
     toggleSci.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSci.click(); }
@@ -1391,10 +1525,15 @@
     // Initial render
     // Restore last used modes (if present)
     const savedAngle = getCookie('calc_angle');
+    const savedMode = getCookie('calc_mode');
     const savedSci = getCookie('calc_sci');
     const savedLog = getCookie('calc_log');
     setAngleMode(savedAngle === 'RAD' ? 'RAD' : 'DEG');
-    setSciMode(savedSci === '1');
+    if (savedMode) {
+      setCalcMode(savedMode);
+    } else {
+      setCalcMode(savedSci === '1' ? 'SCI' : 'STD');
+    }
     setLogVisible(savedLog === '1');
     updateTrigButtons();
     updateFooterHelpText();

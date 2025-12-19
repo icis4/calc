@@ -16,11 +16,9 @@ python -m http.server
 
 - **STD mode**: standard calculator keys + VAT tools + currency conversion.
 - **SCI mode**: scientific keys (toggle using the top-right mode pill).
+- **TRZ mode**: same UI/behavior as **STD** (duplicate).
 
-The **SCI/STD pill label shows the mode you will switch to**:
-
-- In STD mode, it shows **“SCI Mode”**.
-- In SCI mode, it shows **“STD Mode”**.
+The mode pill shows the **current** mode (cycle on click: **STD → TRZ → SCI → STD**).
 
 ## Display
 
@@ -32,6 +30,9 @@ The **SCI/STD pill label shows the mode you will switch to**:
 - The Log panel is **hidden by default**.
 - Use the **LOG** pill (left of **DEG**) to show/hide it.
 - The panel appears to the right of the calculator (stacks below on small screens).
+- Use **Export CSV** to download the current log as `calc-log.csv`.
+- Use **Clear** to remove all log entries (also clears persisted log storage).
+- Each log row shows an **Action** (e.g. `2 + 10`, `20 BGN`) and the resulting **Value**.
 - The log keeps the **last 50 values** and restores them on reload.
 - **Double-click** a log item to copy its value to the calculator display.
 
@@ -102,7 +103,8 @@ Buttons appear only in STD mode:
 
 The app stores your last used:
 
-- **SCI/STD mode** (`calc_sci` cookie)
+- **Mode** (`calc_mode` cookie: `STD` / `SCI` / `TRZ`)
+  - Legacy fallback: `calc_sci` (`1` / `0`)
 - **DEG/RAD** (`calc_angle` cookie)
 - **Log panel visibility** (`calc_log` cookie)
 - **Log entries** (saved in `localStorage` as `calc_log_entries`)
