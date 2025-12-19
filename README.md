@@ -94,6 +94,7 @@ Buttons appear only in STD/TRZ mode:
 - `-VAT`: removes **20% VAT** (gross → net): $x \to x / 1.2$
 - `+VAT` / `-VAT` results are rounded to **2 decimals**.
 - `00`: rounds the current value to **2 decimals**
+  - In **TRZ** mode it is labeled as `00ᶻ`: ако третият знак след десетичната запетая е по-голям от нула, вторият знак след десетичната запетая се увеличава с една единица.
 - `000`: rounds the current value to **3 decimals**
 
 ### Negative number entry
