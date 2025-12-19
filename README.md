@@ -85,6 +85,7 @@ Buttons appear only in STD/TRZ mode:
 - `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
 - `BGN`: converts **EUR → BGN** using the same peg
 - Results are rounded to **2 decimals**.
+  - In **TRZ** mode, `EUR` is labeled as `EURᶻ` and (BGN → EUR) is rounded to **3 decimals**.
 
 ### VAT (STD/TRZ mode)
 

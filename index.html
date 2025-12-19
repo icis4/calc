@@ -963,7 +963,7 @@
       const EUR_BGN = 1.95583;
       const bgn = Number(current);
       if (!isFinite(bgn)) { setCurrent('Error'); return; }
-      current = (bgn / EUR_BGN).toFixed(2);
+      current = (bgn / EUR_BGN).toFixed(calcMode === 'TRZ' ? 3 : 2);
       overwrite = true;
       renderBottom();
       renderTop();
@@ -1225,6 +1225,15 @@
           round2Btn.innerHTML = '00<sup>z</sup>';
         } else {
           round2Btn.textContent = '00';
+        }
+      }
+
+      const eurBtn = shell.querySelector('button[data-action="eur"]');
+      if (eurBtn) {
+        if (calcMode === 'TRZ') {
+          eurBtn.innerHTML = 'EUR<sup>z</sup>';
+        } else {
+          eurBtn.textContent = 'EUR';
         }
       }
     }
