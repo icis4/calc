@@ -78,23 +78,21 @@ The **DEG/RAD pill** changes how trig is interpreted:
 - Normal trig (`sin/cos/tan`): input is treated as degrees or radians.
 - Inverse trig (`sin⁻¹/cos⁻¹/tan⁻¹`): output is returned as degrees or radians.
 
-### Currency conversion (STD mode)
+### Currency conversion (STD/TRZ mode)
 
-Buttons appear only in STD mode:
+Buttons appear only in STD/TRZ mode:
 
 - `EUR`: converts **BGN → EUR** using the fixed peg `1 EUR = 1.95583 BGN`
 - `BGN`: converts **EUR → BGN** using the same peg
 
-### VAT (STD mode)
+### VAT (STD/TRZ mode)
 
-Buttons appear only in STD mode:
+Buttons appear only in STD/TRZ mode:
 
 - `+VAT`: adds **20% VAT** (net → gross): $x \to x \cdot 1.2$
 - `-VAT`: removes **20% VAT** (gross → net): $x \to x / 1.2$
-- `00`: rounds the current value to **2 decimals**
+- `00`: rounds the current value to **2 decimals** — ако третият знак след десетичната запетая е по-голям от нула, вторият знак след десетичната запетая се увеличава с една единица.
 - `000`: rounds the current value to **3 decimals**
-
-For `00`: ако третият знак след десетичната запетая е по-голям от нула, вторият знак след десетичната запетая се увеличава с една единица.
 
 ### Negative number entry
 
