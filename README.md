@@ -53,16 +53,21 @@ The mode pill shows the **current** mode (cycle on click: **STD → TRZ → SCI 
 
 ### Scientific (SCI mode)
 
-- `√x` (square root)
+- `√` (square root)
 - `x^y` (exponent)
+- `mod` (modulo / remainder)
 - `%` (percent)
 - `π` (pi constant)
 - `EXP` (scientific notation entry, e.g. `5.6e-4`)
+- `1/x` (reciprocal)
+- `|x|` (absolute value)
 - Trigonometry: `sin`, `cos`, `tan`
 - **INV** toggles:
   - `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
   - `ln` → `e^x`
   - `log` → `10^x`
+  - `√` → `x²`
+  - `x^y` → `ʸ√x` (y-th root)
 - Logs:
   - `ln(x)` (natural log)
   - `log(x)` (base-10 log)
@@ -142,6 +147,20 @@ The app stores your last used:
 
 - `n` / `F9` → `+/-`
 
+## Memory
+
+The calculator includes a simple memory register:
+
+- `MC` clears memory
+- `MR` recalls memory into the display
+- `MS` stores the current value into memory
+- `M+` adds the current value to memory
+- `M-` subtracts the current value from memory
+
+When memory is set, an **M indicator** appears in the display.
+
+Memory operations are also written to the **Log** panel (MS/MC/MR/M+/M-).
+
 ## Notes
 
 - `ln(x)` and `log(x)` require `x > 0`; otherwise the calculator shows `Error`.
@@ -151,4 +170,4 @@ The app stores your last used:
 ## Layout
 
 - The `0` key is single-width.
-- The `=` key spans two columns.
+- The `=` key is single-width.

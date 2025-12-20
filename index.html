@@ -302,7 +302,22 @@
       padding: 18px 18px 8px;
       display: grid; gap: 6px;
       background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      position: relative;
     }
+
+    .mem-indicator {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      font-size: clamp(12px, 2.6vw, 14px);
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 140ms ease;
+    }
+    .mem-indicator.on { opacity: 1; }
     .line-top {
       min-height: 22px;
       color: var(--muted);
@@ -331,10 +346,33 @@
     .row-advanced {
       display: none;
       grid-column: 1 / -1;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
     }
     .show-sci .row-advanced { display: grid; }
+
+    .row-memory {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .row-memory button.key {
+      padding: 12px 10px;
+      font-size: clamp(12px, 3.2vw, 16px);
+    }
+
+    /* In SCI mode, shrink the top (advanced) button row above C/DEL */
+    .show-sci .row-advanced button.key {
+      padding: 8px 10px;
+      font-size: clamp(13px, 3.6vw, 16px);
+    }
+
+    .key-spacer {
+      visibility: hidden;
+      pointer-events: none;
+    }
 
     .row-std-extras {
       display: grid;
@@ -371,7 +409,19 @@
       transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
       position: relative;
       user-select: none;
+      line-height: 1;
     }
+
+    /* Keep keys the same size even when labels contain <sup>/<sub> */
+    button.key sup,
+    button.key sub {
+      font-size: 0.65em;
+      line-height: 0;
+      vertical-align: baseline;
+      position: relative;
+    }
+    button.key sup { top: -0.55em; }
+    button.key sub { top: 0.20em; }
     button.key:hover { transform: translateY(-1.5px); }
     button.key:active { transform: translateY(0px) scale(0.98); }
     button.key.op { color: #cfe1ff; background: rgba(72, 110, 177, 0.34); }
@@ -413,28 +463,38 @@
     </div>
 
     <section class="display">
+      <div class="mem-indicator" id="memIndicator" aria-hidden="true">M</div>
       <div class="line-top" id="lineTop" aria-live="polite" aria-atomic="true"></div>
       <div class="line-bottom" id="lineBottom" aria-live="polite" aria-atomic="true">0</div>
     </section>
 
     <section class="pad" id="pad">
+      <div class="row-memory">
+        <button class="key op" data-action="mem-clear" aria-label="Memory clear">MC</button>
+        <button class="key op" data-action="mem-recall" aria-label="Memory recall">MR</button>
+        <button class="key op" data-action="mem-plus" aria-label="Memory add">M+</button>
+        <button class="key op" data-action="mem-minus" aria-label="Memory subtract">M-</button>
+        <button class="key op" data-action="mem-store" aria-label="Memory store">MS</button>
+      </div>
+
       <!-- Advanced row (hidden by default, shown when Sci Mode active) -->
       <div class="row-advanced">
+        <button class="key warning" data-action="inv" aria-label="Toggle inverse trig">INV</button>
         <button class="key op" data-action="sqrt" aria-label="Square root">√</button>
-        <button class="key op" data-action="power" aria-label="Exponent">x^y</button>
-        <button class="key op" data-action="percent" aria-label="Percent">%</button>
+        <button class="key op" data-action="power" aria-label="Exponent">x<sup>y</sup></button>
+        <button class="key op" data-op="mod" aria-label="Modulo">mod</button>
         <button class="key op" data-action="sin" aria-label="Sine (degrees)">sin</button>
         <button class="key op" data-action="cos" aria-label="Cosine (degrees)">cos</button>
         <button class="key op" data-action="tan" aria-label="Tangent (degrees)">tan</button>
         <button class="key op" data-action="pi" aria-label="Pi">π</button>
-        <button class="key op" data-action="inv" aria-label="Toggle inverse trig">INV</button>
         <button class="key op" data-action="ln" aria-label="Natural logarithm">ln</button>
         <button class="key op" data-action="log" aria-label="Base-10 logarithm">log</button>
-        <button class="key op" data-action="expmark" aria-label="Scientific notation (e)">EXP</button>
-        <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
+        <button class="key op" data-action="recip" aria-label="Reciprocal (1 divided by x)">1/x</button>
+        <button class="key op" data-action="abs" aria-label="Absolute value">|x|</button>
         <button class="key op" data-action="coin" aria-label="Coin flip (0 or 1)">Coin</button>
         <button class="key op" data-action="dice" aria-label="Dice roll (1 to 6)">Dice</button>
         <button class="key op" data-action="rand" aria-label="Random number (0 to 1)">Rand</button>
+        <button class="key op" data-action="expmark" aria-label="Scientific notation (e)">EXP</button>
       </div>
 
       <!-- Standard-only VAT helpers (hidden when Sci Mode active) -->
@@ -449,14 +509,14 @@
       <div class="row-std-extras">
         <button class="key op" data-action="eur" aria-label="Convert BGN to EUR">EUR</button>
         <button class="key op" data-action="bgn" aria-label="Convert EUR to BGN">BGN</button>
-        <button class="key op" data-action="percent" aria-label="Percent">%</button>
-        <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
+        <button class="key op" data-action="recip" aria-label="Reciprocal (1 divided by x)">1/x</button>
+        <button class="key op" data-action="sqrt" aria-label="Square root">√x</button>
       </div>
 
       <!-- Primary keys -->
       <button class="key danger" data-action="clear" aria-label="Clear">C</button>
       <button class="key warning" data-action="del" aria-label="Delete">DEL</button>
-      <button class="key op" data-action="power-inline" aria-label="Exponent inline">^</button>
+      <button class="key op" data-action="percent" aria-label="Percent">%</button>
       <button class="key op" data-op="/" aria-label="Divide">÷</button>
 
       <button class="key" data-digit="7">7</button>
@@ -476,7 +536,8 @@
 
       <button class="key" data-digit="0">0</button>
       <button class="key" data-dot="." aria-label="Decimal">.</button>
-      <button class="key accent" data-wide="2" data-action="equals" aria-label="Equals">=</button>
+      <button class="key op" data-action="negate" aria-label="Toggle sign">+/-</button>
+      <button class="key accent" data-action="equals" aria-label="Equals">=</button>
     </section>
 
       <div class="footer" id="footerHelp">Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent</div>
@@ -524,6 +585,7 @@
     const helpModal = document.getElementById('helpModal');
     const helpBody = document.getElementById('helpBody');
     const helpClose = document.getElementById('helpClose');
+    const memIndicator = document.getElementById('memIndicator');
 
     let prev = null;       // previous numeric value (left operand)
     let current = '0';     // current input (string for easy editing)
@@ -532,6 +594,14 @@
     let angleMode = 'DEG'; // trig angle mode: 'DEG' or 'RAD'
     let trigInverse = false; // when true: sin/cos/tan become arcsin/arccos/arctan
     let calcMode = 'STD';  // 'STD' | 'SCI' | 'TRZ' (TRZ duplicates STD)
+
+    let memoryValue = 0;
+    let memorySet = false;
+
+    function updateMemoryIndicator() {
+      if (!memIndicator) return;
+      memIndicator.classList.toggle('on', Boolean(memorySet));
+    }
 
     const LOG_STORAGE_KEY = 'calc_log_entries';
     const LOG_MAX_ENTRIES = 50;
@@ -719,7 +789,7 @@
       return n.toExponential(Math.max(0, fracDigits - 2)).replace('e+', 'e');
     }
 
-    const symbolFor = (op) => ({ '+': '+', '-': '−', '*': '×', '/': '÷', '^': '^' }[op] || '');
+    const symbolFor = (op) => ({ '+': '+', '-': '−', '*': '×', '/': '÷', '^': '^', 'root': 'ʸ√', 'mod': 'mod' }[op] || '');
 
     function renderTop() {
       const opSym = symbolFor(operator);
@@ -864,10 +934,79 @@
     function applySqrt() {
       if (current === 'Error') { return; }
       const curNum = Number(current);
+      if (calcMode === 'SCI' && trigInverse) {
+        const r = curNum * curNum;
+        current = fmt(r); overwrite = true; renderBottom(); renderTop();
+        appendLogValue(current, `${fmt(curNum)}²`);
+        return;
+      }
       if (curNum < 0) { setCurrent('Error'); return; }
       const r = Math.sqrt(curNum);
       current = fmt(r); overwrite = true; renderBottom(); renderTop();
       appendLogValue(current, `√ ${fmt(curNum)}`);
+    }
+
+    function applyReciprocal() {
+      // 1/x
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      if (!isFinite(x) || x === 0) { setCurrent('Error'); return; }
+      current = fmt(1 / x);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+      appendLogValue(current, `1/${fmt(x)}`);
+    }
+
+    function applyAbs() {
+      // abs(x)
+      if (current === 'Error') { return; }
+      const x = Number(current);
+      if (!isFinite(x)) { return; }
+      current = fmt(Math.abs(x));
+      overwrite = true;
+      renderBottom();
+      renderTop();
+      appendLogValue(current, `abs ${fmt(x)}`);
+    }
+
+    function memoryStore() {
+      if (current === 'Error') return;
+      const x = Number(current);
+      if (!isFinite(x)) return;
+      memoryValue = x;
+      memorySet = true;
+      updateMemoryIndicator();
+      appendLogValue(fmt(memoryValue), 'MS');
+    }
+
+    function memoryClear() {
+      memoryValue = 0;
+      memorySet = false;
+      updateMemoryIndicator();
+      appendLogValue('0', 'MC');
+    }
+
+    function memoryRecall() {
+      if (!memorySet) return;
+      if (current === 'Error') { setCurrent('0'); }
+      setCurrent(fmt(memoryValue));
+      overwrite = true;
+      updateMemoryIndicator();
+      appendLogValue(fmt(memoryValue), 'MR');
+    }
+
+    function memoryAdd(sign) {
+      if (current === 'Error') return;
+      const x = Number(current);
+      if (!isFinite(x)) return;
+      if (!memorySet) {
+        memoryValue = 0;
+        memorySet = true;
+      }
+      memoryValue = memoryValue + (sign * x);
+      updateMemoryIndicator();
+      appendLogValue(fmt(memoryValue), `${sign > 0 ? 'M+' : 'M-'} ${fmt(x)}`);
     }
 
     function applyLn() {
@@ -1185,7 +1324,7 @@
           lnBtn.textContent = 'ln';
           lnBtn.setAttribute('aria-label', 'Natural logarithm');
         } else {
-          lnBtn.textContent = 'e^x';
+          lnBtn.innerHTML = 'e<sup>x</sup>';
           lnBtn.setAttribute('aria-label', 'e to the power of x');
         }
       }
@@ -1196,8 +1335,31 @@
           logBtn.textContent = 'log';
           logBtn.setAttribute('aria-label', 'Base-10 logarithm');
         } else {
-          logBtn.textContent = '10^x';
+          logBtn.innerHTML = '10<sup>x</sup>';
           logBtn.setAttribute('aria-label', '10 to the power of x');
+        }
+      }
+
+      // In SCI mode, INV also toggles √ to x² and xʸ to yroot.
+      const sciSqrtBtn = shell.querySelector('.row-advanced button[data-action="sqrt"]');
+      if (sciSqrtBtn) {
+        if (!trigInverse) {
+          sciSqrtBtn.textContent = '√';
+          sciSqrtBtn.setAttribute('aria-label', 'Square root');
+        } else {
+          sciSqrtBtn.textContent = 'x²';
+          sciSqrtBtn.setAttribute('aria-label', 'Square (x squared)');
+        }
+      }
+
+      const sciPowerBtn = shell.querySelector('.row-advanced button[data-action="power"], .row-advanced button[data-action="power-inline"]');
+      if (sciPowerBtn) {
+        if (!trigInverse) {
+          sciPowerBtn.innerHTML = 'x<sup>y</sup>';
+          sciPowerBtn.setAttribute('aria-label', 'Exponent');
+        } else {
+          sciPowerBtn.textContent = 'ʸ√x';
+          sciPowerBtn.setAttribute('aria-label', 'Y-th root');
         }
       }
     }
@@ -1411,6 +1573,10 @@
     }
 
     function setPower() {
+      if (calcMode === 'SCI' && trigInverse) {
+        setOperator('root');
+        return;
+      }
       setOperator('^');
     }
 
@@ -1422,6 +1588,8 @@
         case '*': return a * b;
         case '/': return b === 0 ? NaN : a / b;
         case '^': return Math.pow(a, b);
+        case 'root': return b === 0 ? NaN : Math.pow(a, 1 / b);
+        case 'mod': return b === 0 ? NaN : (a % b);
         default: return b;
       }
     }
@@ -1602,7 +1770,14 @@
         case 'clear': clearAll(); break;
         case 'del': deleteBack(); break;
         case 'equals': equals(); break;
+        case 'mem-clear': memoryClear(); break;
+        case 'mem-recall': memoryRecall(); break;
+        case 'mem-plus': memoryAdd(1); break;
+        case 'mem-minus': memoryAdd(-1); break;
+        case 'mem-store': memoryStore(); break;
         case 'sqrt': applySqrt(); break;
+        case 'recip': applyReciprocal(); break;
+        case 'abs': applyAbs(); break;
         case 'sin': applyTrig('sin'); break;
         case 'cos': applyTrig('cos'); break;
         case 'tan': applyTrig('tan'); break;
@@ -1708,6 +1883,7 @@
     }
     setLogVisible(savedLog === '1');
     updateTrigButtons();
+    updateMemoryIndicator();
     updateFooterHelpText();
     loadLogEntries();
     renderTop(); renderBottom();
