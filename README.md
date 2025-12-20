@@ -55,7 +55,7 @@ The mode pill shows the **current** mode (cycle on click: **STD → TRZ → SCI 
 
 - `√` (square root)
 - `x^y` (exponent)
-- `mod` (modulo / remainder)
+- `mod` (remainder; uses JavaScript `%` semantics)
 - `%` (percent)
 - `π` (pi constant)
 - `EXP` (scientific notation entry, e.g. `5.6e-4`)
@@ -165,6 +165,7 @@ Memory operations are also written to the **Log** panel (MS/MC/MR/M+/M-).
 
 - `ln(x)` and `log(x)` require `x > 0`; otherwise the calculator shows `Error`.
 - Division by zero shows `Error`.
+- While typing an incomplete number (e.g. `-`, `1e`, `1e-`), operations are ignored until the number is complete.
 - Very long results are automatically **compacted for display** (often into a shorter `...e...` form) so they fit the screen.
 
 ## Layout

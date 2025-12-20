@@ -807,6 +807,20 @@
       renderTop();
     }
 
+    function toFiniteNumberOrNull(text) {
+      // Returns a finite number when text is a complete numeric token.
+      // Prevents NaN propagation for in-progress inputs like '-', '1e', '1e-', etc.
+      const s = String(text ?? '').trim();
+      if (!s) return null;
+      if (s === '-' || s === '+') return null;
+      const lower = s.toLowerCase();
+      if (lower.endsWith('e') || lower.endsWith('e-') || lower.endsWith('e+')) return null;
+      if (s === '.' || s === '+.' || s === '-.') return null;
+      const n = Number(s);
+      if (!isFinite(n)) return null;
+      return n;
+    }
+
     function clearAll() {
       prev = null; operator = null; overwrite = true; setCurrent('0'); lineTop.textContent = '';
     }
@@ -907,10 +921,13 @@
 
     function setOperator(op) {
       if (current === 'Error') { return; }
-      const curNum = Number(current);
       if (prev == null) {
+        const curNum = toFiniteNumberOrNull(current);
+        if (curNum == null) return;
         prev = curNum; operator = op; overwrite = true;
       } else if (operator && !overwrite) {
+        const curNum = toFiniteNumberOrNull(current);
+        if (curNum == null) return;
         // chain operations: compute previous op with current, then set new operator
         const r = compute(prev, curNum, operator);
         prev = r; operator = op; current = fmt(r); overwrite = true;
@@ -923,7 +940,8 @@
     function equals() {
       if (current === 'Error') { return; }
       if (operator == null || prev == null) { return; }
-      const curNum = Number(current);
+      const curNum = toFiniteNumberOrNull(current);
+      if (curNum == null) return;
       const r = compute(prev, curNum, operator);
       const expr = `${fmt(prev)} ${symbolFor(operator)} ${fmt(curNum)}`;
       prev = null; operator = null; current = fmt(r); overwrite = true;
@@ -933,7 +951,8 @@
 
     function applySqrt() {
       if (current === 'Error') { return; }
-      const curNum = Number(current);
+      const curNum = toFiniteNumberOrNull(current);
+      if (curNum == null) return;
       if (calcMode === 'SCI' && trigInverse) {
         const r = curNum * curNum;
         current = fmt(r); overwrite = true; renderBottom(); renderTop();
@@ -949,8 +968,9 @@
     function applyReciprocal() {
       // 1/x
       if (current === 'Error') { return; }
-      const x = Number(current);
-      if (!isFinite(x) || x === 0) { setCurrent('Error'); return; }
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
+      if (x === 0) { setCurrent('Error'); return; }
       current = fmt(1 / x);
       overwrite = true;
       renderBottom();
@@ -961,8 +981,8 @@
     function applyAbs() {
       // abs(x)
       if (current === 'Error') { return; }
-      const x = Number(current);
-      if (!isFinite(x)) { return; }
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       current = fmt(Math.abs(x));
       overwrite = true;
       renderBottom();
@@ -972,8 +992,8 @@
 
     function memoryStore() {
       if (current === 'Error') return;
-      const x = Number(current);
-      if (!isFinite(x)) return;
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       memoryValue = x;
       memorySet = true;
       updateMemoryIndicator();
@@ -998,8 +1018,8 @@
 
     function memoryAdd(sign) {
       if (current === 'Error') return;
-      const x = Number(current);
-      if (!isFinite(x)) return;
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       if (!memorySet) {
         memoryValue = 0;
         memorySet = true;
@@ -1012,7 +1032,8 @@
     function applyLn() {
       // Natural log (ln). Domain: x > 0
       if (current === 'Error') { return; }
-      const x = Number(current);
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       if (!(x > 0)) { setCurrent('Error'); return; }
       current = fmt(Math.log(x));
       overwrite = true;
@@ -1024,7 +1045,8 @@
     function applyLog10() {
       // Base-10 log. Domain: x > 0
       if (current === 'Error') { return; }
-      const x = Number(current);
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       if (!(x > 0)) { setCurrent('Error'); return; }
       const log10 = Math.log10 ? Math.log10(x) : (Math.log(x) / Math.LN10);
       current = fmt(log10);
@@ -1037,7 +1059,8 @@
     function applyExp() {
       // e^x
       if (current === 'Error') { return; }
-      const x = Number(current);
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       current = fmt(Math.exp(x));
       overwrite = true;
       renderBottom();
@@ -1048,7 +1071,8 @@
     function applyPow10() {
       // 10^x
       if (current === 'Error') { return; }
-      const x = Number(current);
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       current = fmt(Math.pow(10, x));
       overwrite = true;
       renderBottom();
@@ -1096,8 +1120,8 @@
       // Convert BGN (leva) to EUR using the fixed peg: 1 EUR = 1.95583 BGN
       if (current === 'Error') { return; }
       const EUR_BGN = 1.95583;
-      const bgn = Number(current);
-      if (!isFinite(bgn)) { setCurrent('Error'); return; }
+      const bgn = toFiniteNumberOrNull(current);
+      if (bgn == null) return;
       current = (bgn / EUR_BGN).toFixed(calcMode === 'TRZ' ? 3 : 2);
       overwrite = true;
       renderBottom();
@@ -1109,8 +1133,8 @@
       // Convert EUR to BGN using the fixed peg: 1 EUR = 1.95583 BGN
       if (current === 'Error') { return; }
       const EUR_BGN = 1.95583;
-      const eur = Number(current);
-      if (!isFinite(eur)) { setCurrent('Error'); return; }
+      const eur = toFiniteNumberOrNull(current);
+      if (eur == null) return;
       current = (eur * EUR_BGN).toFixed(2);
       overwrite = true;
       renderBottom();
@@ -1122,8 +1146,8 @@
       // Add VAT (default 20%): net -> gross
       if (current === 'Error') { return; }
       const VAT = 0.20;
-      const x = Number(current);
-      if (!isFinite(x)) { setCurrent('Error'); return; }
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       current = (x * (1 + VAT)).toFixed(2);
       overwrite = true;
       renderBottom();
@@ -1135,8 +1159,8 @@
       // Remove VAT (default 20%): gross -> net
       if (current === 'Error') { return; }
       const VAT = 0.20;
-      const x = Number(current);
-      if (!isFinite(x)) { setCurrent('Error'); return; }
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
       current = (x / (1 + VAT)).toFixed(2);
       overwrite = true;
       renderBottom();
@@ -1147,8 +1171,8 @@
     function applyRound(decimals) {
       // Round current value to a fixed number of decimals.
       if (current === 'Error') { return; }
-      const x = Number(current);
-      if (!isFinite(x)) { setCurrent('Error'); return; }
+      const x = toFiniteNumberOrNull(current);
+      if (x == null) return;
 
       if (decimals === 2 && calcMode === 'TRZ') {
         current = roundTrz00(String(current));
@@ -1243,7 +1267,8 @@
       // Trig supports DEG and RAD modes.
       // Math.* trig functions use radians.
       if (current === 'Error') { return; }
-      const input = Number(current);
+      const input = toFiniteNumberOrNull(current);
+      if (input == null) return;
       let r;
       const modeSuffix = angleMode === 'DEG' ? '°' : ' rad';
       const label = !trigInverse ? kind : (kind === 'sin' ? 'sin⁻¹' : kind === 'cos' ? 'cos⁻¹' : 'tan⁻¹');
@@ -1561,7 +1586,8 @@
 
     function applyPercent() {
       if (current === 'Error') { return; }
-      let curNum = Number(current);
+      let curNum = toFiniteNumberOrNull(current);
+      if (curNum == null) return;
       if (operator === '+' || operator === '-') {
         if (prev != null) curNum = (prev * curNum) / 100;
       } else if (operator === '*' || operator === '/') {
