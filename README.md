@@ -131,6 +131,24 @@ The app stores your last used:
 - `Ctrl/Cmd+C` copies the current value
 - `Ctrl/Cmd+V` pastes a number into the calculator (supports scientific notation like `1.0e+10`, `2e5`, `-10e-12`)
 
+### Mode switching
+
+- `F5` → switch to **STD**
+- `F6` → switch to **TRZ**
+- `F7` → switch to **SCI**
+
+### Angle mode
+
+- `F8` → toggle **DEG/RAD**
+
+### Log toggle
+
+- `F10` → show/hide **LOG** panel
+
+### Help shortcut
+
+- `F1` → open/close **Help**
+
 ### Scientific shortcuts
 
 - `s` → `√`

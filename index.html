@@ -1473,7 +1473,8 @@
       function inlineFormat(text) {
         let t = escapeHtml(text);
         // Inline code
-        t = t.replace(/`([^`]+?)`/g, (_m, c) => `<code>${escapeHtml(c)}</code>`);
+        // Note: `t` is already escaped, so do not escape code content again.
+        t = t.replace(/`([^`]+?)`/g, (_m, c) => `<code>${c}</code>`);
         // Bold
         t = t.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
         // Links [text](url)
@@ -1659,11 +1660,46 @@
     };
 
     window.addEventListener('keydown', (e) => {
+      // Help toggle (F1). Handle first so it works consistently.
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (document.body.classList.contains('show-help')) closeHelp();
+        else openHelp();
+        return;
+      }
+
       if (document.body.classList.contains('show-help')) {
         if (e.key === 'Escape') {
           e.preventDefault();
           closeHelp();
         }
+        return;
+      }
+
+      // Quick mode switching (best-effort; some browsers may still reserve F5).
+      if (e.key === 'F5' || e.key === 'F6' || e.key === 'F7') {
+        e.preventDefault();
+        const nextMode = e.key === 'F5' ? 'STD' : (e.key === 'F6' ? 'TRZ' : 'SCI');
+        setCalcMode(nextMode);
+        setCookie('calc_mode', calcMode);
+        // Backward-compatible cookie for older versions.
+        setCookie('calc_sci', calcMode === 'SCI' ? '1' : '0');
+        return;
+      }
+
+      // Toggle angle mode (DEG/RAD).
+      if (e.key === 'F8') {
+        e.preventDefault();
+        toggleAngleMode();
+        return;
+      }
+
+      // Toggle Log panel visibility.
+      if (e.key === 'F10') {
+        e.preventDefault();
+        const next = !(app && app.classList.contains('show-log'));
+        setLogVisible(next);
+        setCookie('calc_log', next ? '1' : '0');
         return;
       }
 
