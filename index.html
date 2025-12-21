@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Neumorphic Glass Calculator</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
     :root {
       --bg: #0b0f14;
@@ -455,6 +457,7 @@
     <main class="shell" id="calc">
       <div class="chrome">
       <div class="chrome-actions">
+        <div class="pill" id="toggleInstall" tabindex="0" role="button" aria-label="Add shortcut to home screen" style="display:none">Add</div>
         <div class="pill" id="toggleHelp" tabindex="0" role="button" aria-pressed="false" aria-label="Open help">Help</div>
         <div class="pill" id="toggleLog" tabindex="0" role="button" aria-pressed="false" aria-label="Show/hide log panel">LOG</div>
         <div class="pill" id="toggleAngle" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle angle mode">DEG</div>
@@ -574,6 +577,7 @@
     const app = document.getElementById('app');
     const pad = document.getElementById('pad');
     const shell = document.getElementById('calc');
+    const toggleInstall = document.getElementById('toggleInstall');
     const toggleHelp = document.getElementById('toggleHelp');
     const toggleLog = document.getElementById('toggleLog');
     const toggleSci = document.getElementById('toggleSci');
@@ -597,6 +601,53 @@
 
     let memoryValue = 0;
     let memorySet = false;
+
+    // Add-to-Home / Install support (PWA)
+    let deferredInstallPrompt = null;
+    function isStandaloneDisplayMode() {
+      try {
+        return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      } catch {
+        return false;
+      }
+    }
+    function isIosDevice() {
+      const ua = String(navigator.userAgent || '');
+      return /iphone|ipad|ipod/i.test(ua);
+    }
+    function setInstallVisible(visible) {
+      if (!toggleInstall) return;
+      toggleInstall.style.display = visible ? '' : 'none';
+      toggleInstall.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+    function refreshInstallUi() {
+      if (!toggleInstall) return;
+      if (isStandaloneDisplayMode()) {
+        setInstallVisible(false);
+        return;
+      }
+      // Show button if we can prompt (Chromium) or if we're on iOS (manual instructions).
+      setInstallVisible(Boolean(deferredInstallPrompt) || isIosDevice());
+    }
+
+    // Service worker is required for installability in most browsers.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Defer the browser's mini-infobar so we can show our own button.
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      refreshInstallUi();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      refreshInstallUi();
+    });
 
     function updateMemoryIndicator() {
       if (!memIndicator) return;
@@ -1571,6 +1622,28 @@
       if (helpModal) helpModal.setAttribute('aria-hidden', 'true');
     }
 
+    async function promptInstallOrShowInstructions() {
+      if (deferredInstallPrompt) {
+        try {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+        } catch {
+          // ignore
+        } finally {
+          deferredInstallPrompt = null;
+          refreshInstallUi();
+        }
+        return;
+      }
+
+      if (isIosDevice() && !isStandaloneDisplayMode()) {
+        alert('iPhone/iPad: tap Share → Add to Home Screen.');
+        return;
+      }
+
+      alert('Use your browser menu to install / add to home screen (requires HTTPS or localhost).');
+    }
+
     function updateFooterHelpText() {
       if (!footerHelp) return;
 
@@ -1892,6 +1965,14 @@
       toggleLog.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLog.click(); }
       });
+    }
+
+    if (toggleInstall) {
+      toggleInstall.addEventListener('click', () => promptInstallOrShowInstructions());
+      toggleInstall.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleInstall.click(); }
+      });
+      refreshInstallUi();
     }
 
     // Help modal

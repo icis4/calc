@@ -186,6 +186,11 @@ Memory operations are also written to the **Log** panel (MS/MC/MR/M+/M-).
 - While typing an incomplete number (e.g. `-`, `1e`, `1e-`), operations are ignored until the number is complete.
 - Very long results are automatically **compacted for display** (often into a shorter `...e...` form) so they fit the screen.
 
+## Add to Home Screen
+
+- When available, use the **Add** button in the top bar to install/add a shortcut.
+- Install requires serving the folder via **HTTPS** or **localhost** (for example: `python -m http.server`).
+
 ## Layout
 
 - The `0` key is single-width.
