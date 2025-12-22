@@ -543,7 +543,13 @@
       <button class="key accent" data-action="equals" aria-label="Equals">=</button>
     </section>
 
-      <div class="footer" id="footerHelp">Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent</div>
+      <div class="footer" id="footerHelp">
+        <a href="/LICENSE" id="footerLicense" aria-label="Open License">License</a>
+        <span aria-hidden="true"> · </span>
+        <a href="https://github.com/icis4/calc" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub repository">GitHub</a>
+        <span aria-hidden="true"> · </span>
+        <a href="https://github.com/icis4/calc/issues" target="_blank" rel="noopener noreferrer" aria-label="Report a bug or request a feature">Report bug / Request feature</a>
+      </div>
     </main>
 
     <aside class="log-panel" aria-label="Log panel">
@@ -562,7 +568,7 @@
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-label="Help" aria-hidden="true">
     <div class="modal-card" role="document">
       <div class="modal-header">
-        <div class="modal-title">Help</div>
+        <div class="modal-title" id="helpTitle">Help</div>
         <button class="modal-close" id="helpClose" type="button" aria-label="Close help">Close</button>
       </div>
       <div class="modal-body" id="helpBody">Loading…</div>
@@ -595,12 +601,17 @@
     let current = '0';     // current input (string for easy editing)
     let operator = null;   // pending operator: '+', '-', '*', '/', '^'
     let overwrite = true;  // whether next digit should overwrite current
+    let justPressedOperator = false;
     let angleMode = 'DEG'; // trig angle mode: 'DEG' or 'RAD'
     let trigInverse = false; // when true: sin/cos/tan become arcsin/arccos/arctan
     let calcMode = 'STD';  // 'STD' | 'SCI' | 'TRZ' (TRZ duplicates STD)
 
     let memoryValue = 0;
     let memorySet = false;
+
+    // Paper-tape preview row (updated while typing the right operand)
+    // Points to an object inside logEntries (or null when inactive).
+    let tapePreviewEntry = null;
 
     // Add-to-Home / Install support (PWA)
     let deferredInstallPrompt = null;
@@ -705,6 +716,71 @@
       if (logEntries.length > LOG_MAX_ENTRIES) logEntries.length = LOG_MAX_ENTRIES;
       renderLog();
       saveLogEntries();
+    }
+
+    function removeTapePreviewEntry() {
+      if (!tapePreviewEntry) return;
+      const idx = logEntries.indexOf(tapePreviewEntry);
+      if (idx !== -1) logEntries.splice(idx, 1);
+      tapePreviewEntry = null;
+      renderLog();
+      saveLogEntries();
+    }
+
+    function updateTapePreviewFromState() {
+      // While entering the right-hand operand, keep a live paper-tape row like:
+      //  6 + 12  -> 18
+      // This makes the final step appear without needing '='.
+      if (!(prev != null && operator && !justPressedOperator)) {
+        // If we are not actively entering a right operand, don't keep a stale preview.
+        if (tapePreviewEntry) {
+          // Leave it in the log (it's a committed step); just stop treating it as preview.
+          tapePreviewEntry = null;
+        }
+        return;
+      }
+
+      const curNum = toFiniteNumberOrNull(current);
+      if (curNum == null) {
+        // Incomplete token (e.g. '-', '1e', etc.) => remove preview row to avoid stale values.
+        removeTapePreviewEntry();
+        return;
+      }
+
+      const r = compute(prev, curNum, operator);
+      const value = fmt(r);
+      if (!value || value === 'Error') {
+        removeTapePreviewEntry();
+        return;
+      }
+
+      const expr = `${fmt(prev)} ${symbolFor(operator)} ${fmt(curNum)} = ${value}`;
+
+      if (tapePreviewEntry) {
+        tapePreviewEntry.action = expr;
+        tapePreviewEntry.value = value;
+      } else {
+        tapePreviewEntry = { action: expr, value };
+        logEntries.unshift(tapePreviewEntry);
+        if (logEntries.length > LOG_MAX_ENTRIES) logEntries.length = LOG_MAX_ENTRIES;
+      }
+      renderLog();
+      saveLogEntries();
+    }
+
+    function commitTapeStep(expr, value) {
+      const v = String(value ?? '');
+      const a = String(expr ?? '');
+      if (!v || v === 'Error') return;
+      if (tapePreviewEntry) {
+        tapePreviewEntry.action = a;
+        tapePreviewEntry.value = v;
+        tapePreviewEntry = null;
+        renderLog();
+        saveLogEntries();
+        return;
+      }
+      appendLogValue(v, a);
     }
 
     function renderLog() {
@@ -850,6 +926,7 @@
     }
     function renderBottom() {
       lineBottom.textContent = formatForDisplay(current ?? '0');
+      updateTapePreviewFromState();
     }
 
     function setCurrent(val) {
@@ -873,12 +950,14 @@
     }
 
     function clearAll() {
-      prev = null; operator = null; overwrite = true; setCurrent('0'); lineTop.textContent = '';
+      removeTapePreviewEntry();
+      prev = null; operator = null; overwrite = true; justPressedOperator = false; setCurrent('0'); lineTop.textContent = '';
     }
 
     function deleteBack() {
       if (overwrite) { setCurrent('0'); return; }
       if (current === 'Error') { setCurrent('0'); return; }
+      justPressedOperator = false;
       if (current.length <= 1 || (current.length === 2 && current.startsWith('-'))) {
         setCurrent('0'); return;
       }
@@ -886,6 +965,7 @@
     }
 
     function inputDigit(d) {
+      justPressedOperator = false;
       if (overwrite || current === '0') {
         current = d;
         overwrite = false;
@@ -896,6 +976,7 @@
     }
 
     function inputDot() {
+      justPressedOperator = false;
       if (overwrite) {
         current = '0.'; overwrite = false; renderBottom(); renderTop(); return;
       }
@@ -917,6 +998,7 @@
       // Only triggers when we're at the start of an entry.
       if (current === 'Error') { setCurrent('0'); }
       if (overwrite || current === '0') {
+        justPressedOperator = false;
         current = '-';
         overwrite = false;
         renderBottom();
@@ -934,18 +1016,21 @@
       if (idx === -1) return false;
       const expPart = current.slice(idx + 1);
       if (expPart === '') {
+        justPressedOperator = false;
         current += sign;
         overwrite = false;
         renderBottom(); renderTop();
         return true;
       }
       if (expPart === '-' && sign === '+') {
+        justPressedOperator = false;
         current = current.slice(0, idx + 1);
         overwrite = false;
         renderBottom(); renderTop();
         return true;
       }
       if (expPart === '+' && sign === '-') {
+        justPressedOperator = false;
         current = current.slice(0, idx + 1) + '-';
         overwrite = false;
         renderBottom(); renderTop();
@@ -961,9 +1046,11 @@
       if (current.toLowerCase().includes('e')) { return; }
 
       if (overwrite) {
+        justPressedOperator = false;
         current = '1e';
         overwrite = false;
       } else {
+        justPressedOperator = false;
         current += 'e';
       }
       renderBottom();
@@ -975,15 +1062,24 @@
       if (prev == null) {
         const curNum = toFiniteNumberOrNull(current);
         if (curNum == null) return;
-        prev = curNum; operator = op; overwrite = true;
+        prev = curNum; operator = op; overwrite = true; justPressedOperator = true;
       } else if (operator && !overwrite) {
         const curNum = toFiniteNumberOrNull(current);
         if (curNum == null) return;
         // chain operations: compute previous op with current, then set new operator
-        const r = compute(prev, curNum, operator);
-        prev = r; operator = op; current = fmt(r); overwrite = true;
+        const left = prev;
+        const oldOp = operator;
+        const r = compute(left, curNum, oldOp);
+        const expr = `${fmt(left)} ${symbolFor(oldOp)} ${fmt(curNum)} = ${fmt(r)}`;
+        prev = r;
+        operator = op;
+        current = fmt(r);
+        overwrite = true;
+        commitTapeStep(expr, current);
+        tapePreviewEntry = null;
+        justPressedOperator = true;
       } else {
-        operator = op; overwrite = true;
+        operator = op; overwrite = true; justPressedOperator = true;
       }
       renderBottom(); renderTop();
     }
@@ -994,10 +1090,12 @@
       const curNum = toFiniteNumberOrNull(current);
       if (curNum == null) return;
       const r = compute(prev, curNum, operator);
-      const expr = `${fmt(prev)} ${symbolFor(operator)} ${fmt(curNum)}`;
+      const expr = `${fmt(prev)} ${symbolFor(operator)} ${fmt(curNum)} = ${fmt(r)}`;
       prev = null; operator = null; current = fmt(r); overwrite = true;
       lineTop.textContent = expr; renderBottom();
-      appendLogValue(current, expr);
+      commitTapeStep(expr, current);
+      tapePreviewEntry = null;
+      justPressedOperator = true;
     }
 
     function applySqrt() {
@@ -1592,29 +1690,46 @@
       return out.join('');
     }
 
-    let helpLoaded = false;
+    let helpLoadedPath = null;
+    let helpDocPath = '/README.md';
+    let helpDocTitle = 'Help';
 
-    async function loadHelp() {
-      if (helpLoaded) return;
+    async function loadHelpDoc() {
       if (!helpBody) return;
+      if (helpLoadedPath === helpDocPath) return;
+
       try {
-        const res = await fetch('/README.md', { cache: 'no-store' });
+        const res = await fetch(helpDocPath, { cache: 'no-store' });
         if (!res.ok) throw new Error('fetch failed');
-        const md = await res.text();
-        helpBody.innerHTML = renderMarkdownToHtml(md);
-        helpLoaded = true;
+        const text = await res.text();
+        if (helpDocPath === '/LICENSE') {
+          helpBody.innerHTML = `<pre><code>${escapeHtml(text)}</code></pre>`;
+        } else {
+          helpBody.innerHTML = renderMarkdownToHtml(text);
+        }
+        helpLoadedPath = helpDocPath;
       } catch {
+        const fileLabel = helpDocPath === '/LICENSE' ? 'LICENSE' : (helpDocPath === '/README.md' ? 'README.md' : helpDocPath);
         helpBody.innerHTML = renderMarkdownToHtml(
-          '# Help\n\nUnable to load **README.md**.\n\nIf you opened `index.html` directly, some browsers block reading sibling files.\n\nStart a local server in this folder and open it via http://:\n\n```\npython -m http.server\n```\n'
+          `# ${helpDocTitle}\n\nUnable to load **${fileLabel}**.\n\nIf you opened \`index.html\` directly, some browsers block reading sibling files.\n\nStart a local server in this folder and open it via http://:\n\n\`\`\`\npython -m http.server\n\`\`\`\n`
         );
-        helpLoaded = false;
+        helpLoadedPath = null;
       }
     }
 
-    function openHelp() {
+    function openDocInModal(path, title) {
+      helpDocPath = String(path || '/README.md');
+      helpDocTitle = String(title || 'Help');
+      const titleEl = document.getElementById('helpTitle');
+      if (titleEl) titleEl.textContent = helpDocTitle;
+      if (helpModal) helpModal.setAttribute('aria-label', helpDocTitle);
       document.body.classList.add('show-help');
       if (helpModal) helpModal.setAttribute('aria-hidden', 'false');
-      loadHelp();
+      loadHelpDoc();
+    }
+
+    function openHelp() {
+      openDocInModal('/README.md', 'Help');
     }
 
     function closeHelp() {
@@ -1647,15 +1762,43 @@
     function updateFooterHelpText() {
       if (!footerHelp) return;
 
-      const base = 'Keyboard: 0-9 . + - * / ^  Enter=Equals, Esc=Clear, Backspace=Delete, %=Percent, Ctrl+C=Copy, Ctrl+V=Paste';
-      const isSci = calcMode === 'SCI';
-      if (!isSci) {
-        footerHelp.textContent = `${base}  (${calcMode}: VAT, rounding, EUR/BGN via buttons)`;
-        return;
-      }
+      footerHelp.innerHTML = '';
+      const license = document.createElement('a');
+      license.href = '/LICENSE';
+      license.textContent = 'License';
+      license.setAttribute('aria-label', 'Open License');
+      license.addEventListener('click', (e) => {
+        e.preventDefault();
+        openDocInModal('/LICENSE', 'License');
+      });
 
-      const angle = angleMode === 'RAD' ? 'RAD' : 'DEG';
-      footerHelp.textContent = `${base}  (SCI: s=√, i=sin, o=cos, t=tan, p=π, r=${angle === 'RAD' ? 'DEG' : 'RAD'}, e=EXP, l=ln/e^x, g=log/10^x)`;
+      const sep = document.createElement('span');
+      sep.setAttribute('aria-hidden', 'true');
+      sep.textContent = ' · ';
+
+      const gh = document.createElement('a');
+      gh.href = 'https://github.com/icis4/calc';
+      gh.target = '_blank';
+      gh.rel = 'noopener noreferrer';
+      gh.textContent = 'GitHub';
+      gh.setAttribute('aria-label', 'Open GitHub repository');
+
+      const sep2 = document.createElement('span');
+      sep2.setAttribute('aria-hidden', 'true');
+      sep2.textContent = ' · ';
+
+      const issues = document.createElement('a');
+      issues.href = 'https://github.com/icis4/calc/issues';
+      issues.target = '_blank';
+      issues.rel = 'noopener noreferrer';
+      issues.textContent = 'Report bug / Request feature';
+      issues.setAttribute('aria-label', 'Report a bug or request a feature');
+
+      footerHelp.appendChild(license);
+      footerHelp.appendChild(sep);
+      footerHelp.appendChild(gh);
+      footerHelp.appendChild(sep2);
+      footerHelp.appendChild(issues);
     }
 
     function applyPercent() {
@@ -2030,6 +2173,15 @@
     updateFooterHelpText();
     loadLogEntries();
     renderTop(); renderBottom();
+
+    // Footer License link opens modal renderer.
+    const footerLicense = document.getElementById('footerLicense');
+    if (footerLicense) {
+      footerLicense.addEventListener('click', (e) => {
+        e.preventDefault();
+        openDocInModal('/LICENSE', 'License');
+      });
+    }
   </script>
 </body>
 </html>

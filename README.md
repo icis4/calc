@@ -32,13 +32,16 @@ The mode pill shows the **current** mode (cycle on click: **STD → TRZ → SCI 
 - The panel appears to the right of the calculator (stacks below on small screens).
 - Use **Export CSV** to download the current log as `calc-log.csv`.
 - Use **Clear** to remove all log entries (also clears persisted log storage).
-- Each log row shows an **Action** (e.g. `2 + 10`, `20 BGN`) and the resulting **Value**.
+- Each log row shows an **Action** (e.g. `5 + 3 = 8`, `20 BGN`) and the resulting **Value**.
+- For chained arithmetic, the log behaves like a **paper tape**: as you type the right-hand operand, the current step preview updates; pressing the next operator (or `=`) commits the step.
 - The log keeps the **last 50 values** and restores them on reload.
 - **Double-click** a log item to copy its value to the calculator display.
 
 ## Help
 
 - Click **Help** (left of **LOG**) to open a modal that renders this README (loaded from `/README.md`).
+- Click **License** in the footer to open the same modal and render `/LICENSE` as plain text in a `<pre><code>` block.
+- The footer also contains a **GitHub** link to `https://github.com/icis4/calc`.
 - If you opened `index.html` via `file://`, some browsers will block fetching `/README.md`; use the local server command above.
 
 ## Features

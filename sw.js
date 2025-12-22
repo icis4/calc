@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glass-calc-v1';
+const CACHE_NAME = 'glass-calc-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -27,6 +27,20 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+
+  // Network-first for navigations (index.html / app shell) so UI updates
+  // propagate even if only index.html changes.
+  const isNavigation = req.mode === 'navigate' || req.destination === 'document';
+  if (isNavigation) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then((cached) => {
