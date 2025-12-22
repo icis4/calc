@@ -3,6 +3,7 @@ const CORE_ASSETS = [
   './',
   './index.html',
   './README.md',
+  './LICENSE',
   './manifest.webmanifest',
   './icon.svg',
 ];
