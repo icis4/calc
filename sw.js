@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glass-calc-v2';
+const CACHE_NAME = 'glass-calc-v2.1.0';
 const CORE_ASSETS = [
   './',
   './index.html',
