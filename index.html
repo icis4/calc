@@ -483,13 +483,17 @@
       <!-- Advanced row (hidden by default, shown when Sci Mode active) -->
       <div class="row-advanced">
         <button class="key warning" data-action="inv" aria-label="Toggle inverse trig">INV</button>
+        <button class="key warning" data-action="hyp" aria-label="Toggle hyperbolic trig">HYP</button>
         <button class="key op" data-action="sqrt" aria-label="Square root">√</button>
         <button class="key op" data-action="power" aria-label="Exponent">x<sup>y</sup></button>
         <button class="key op" data-op="mod" aria-label="Modulo">mod</button>
+        <button class="key op" data-action="fact" aria-label="Factorial (n factorial)">n!</button>
+        <button class="key op" data-action="euler" aria-label="Euler's number">e</button>
+        <button class="key op" data-action="pi" aria-label="Pi">π</button>
         <button class="key op" data-action="sin" aria-label="Sine (degrees)">sin</button>
         <button class="key op" data-action="cos" aria-label="Cosine (degrees)">cos</button>
         <button class="key op" data-action="tan" aria-label="Tangent (degrees)">tan</button>
-        <button class="key op" data-action="pi" aria-label="Pi">π</button>
+        <button class="key op" data-action="cot" aria-label="Cotangent (degrees)">cot</button>
         <button class="key op" data-action="ln" aria-label="Natural logarithm">ln</button>
         <button class="key op" data-action="log" aria-label="Base-10 logarithm">log</button>
         <button class="key op" data-action="recip" aria-label="Reciprocal (1 divided by x)">1/x</button>
@@ -604,6 +608,7 @@
     let justPressedOperator = false;
     let angleMode = 'DEG'; // trig angle mode: 'DEG' or 'RAD'
     let trigInverse = false; // when true: sin/cos/tan become arcsin/arccos/arctan
+    let trigHyperbolic = false; // when true: sin/cos/tan/cot become sinh/cosh/tanh/coth (angleMode ignored)
     let calcMode = 'STD';  // 'STD' | 'SCI' | 'TRZ' (TRZ duplicates STD)
 
     let memoryValue = 0;
@@ -966,6 +971,7 @@
 
     function inputDigit(d) {
       justPressedOperator = false;
+      if (current === 'Error') { current = '0'; overwrite = true; }
       if (overwrite || current === '0') {
         current = d;
         overwrite = false;
@@ -977,6 +983,7 @@
 
     function inputDot() {
       justPressedOperator = false;
+      if (current === 'Error') { current = '0'; overwrite = true; }
       if (overwrite) {
         current = '0.'; overwrite = false; renderBottom(); renderTop(); return;
       }
@@ -1419,28 +1426,78 @@
       const input = toFiniteNumberOrNull(current);
       if (input == null) return;
       let r;
-      const modeSuffix = angleMode === 'DEG' ? '°' : ' rad';
-      const label = !trigInverse ? kind : (kind === 'sin' ? 'sin⁻¹' : kind === 'cos' ? 'cos⁻¹' : 'tan⁻¹');
+      const hyp = Boolean(trigHyperbolic);
+      const modeSuffix = hyp ? '' : (angleMode === 'DEG' ? '°' : ' rad');
+      const label = !trigInverse
+        ? (hyp ? (kind === 'sin' ? 'sinh' : kind === 'cos' ? 'cosh' : kind === 'tan' ? 'tanh' : 'coth') : kind)
+        : (hyp
+          ? (kind === 'sin' ? 'sinh⁻¹' : kind === 'cos' ? 'cosh⁻¹' : kind === 'tan' ? 'tanh⁻¹' : 'coth⁻¹')
+          : (kind === 'sin' ? 'sin⁻¹' : kind === 'cos' ? 'cos⁻¹' : kind === 'tan' ? 'tan⁻¹' : 'cot⁻¹'));
 
-      if (!trigInverse) {
-        const radians = angleMode === 'DEG' ? (input * Math.PI / 180) : input;
-        switch (kind) {
-          case 'sin': r = Math.sin(radians); break;
-          case 'cos': r = Math.cos(radians); break;
-          case 'tan': r = Math.tan(radians); break;
-          default: return;
+      if (!hyp) {
+        if (!trigInverse) {
+          const radians = angleMode === 'DEG' ? (input * Math.PI / 180) : input;
+          switch (kind) {
+            case 'sin': r = Math.sin(radians); break;
+            case 'cos': r = Math.cos(radians); break;
+            case 'tan': r = Math.tan(radians); break;
+            case 'cot': {
+              const t = Math.tan(radians);
+              if (!isFinite(t) || t === 0) { setCurrent('Error'); return; }
+              r = 1 / t;
+              break;
+            }
+            default: return;
+          }
+        } else {
+          // Inverse trig: expects a ratio input and returns an angle.
+          // Output respects the current angleMode.
+          let radiansOut;
+          switch (kind) {
+            case 'sin': radiansOut = Math.asin(input); break;
+            case 'cos': radiansOut = Math.acos(input); break;
+            case 'tan': radiansOut = Math.atan(input); break;
+            case 'cot': radiansOut = Math.atan(1 / input); break;
+            default: return;
+          }
+          r = angleMode === 'DEG' ? (radiansOut * 180 / Math.PI) : radiansOut;
         }
       } else {
-        // Inverse trig: expects a ratio input and returns an angle.
-        // Output respects the current angleMode.
-        let radiansOut;
-        switch (kind) {
-          case 'sin': radiansOut = Math.asin(input); break;
-          case 'cos': radiansOut = Math.acos(input); break;
-          case 'tan': radiansOut = Math.atan(input); break;
-          default: return;
+        // Hyperbolic trig: angleMode does not apply.
+        if (!trigInverse) {
+          switch (kind) {
+            case 'sin': r = Math.sinh(input); break;
+            case 'cos': r = Math.cosh(input); break;
+            case 'tan': r = Math.tanh(input); break;
+            case 'cot': {
+              const t = Math.tanh(input);
+              if (!isFinite(t) || t === 0) { setCurrent('Error'); return; }
+              r = 1 / t;
+              break;
+            }
+            default: return;
+          }
+        } else {
+          // Inverse hyperbolic trig (principal values).
+          switch (kind) {
+            case 'sin': r = Math.asinh(input); break;
+            case 'cos':
+              if (input < 1) { setCurrent('Error'); return; }
+              r = Math.acosh(input);
+              break;
+            case 'tan':
+              if (!(input > -1 && input < 1)) { setCurrent('Error'); return; }
+              r = Math.atanh(input);
+              break;
+            case 'cot': {
+              // arccoth(x) defined for |x| > 1
+              if (!(Math.abs(input) > 1)) { setCurrent('Error'); return; }
+              r = 0.5 * Math.log((input + 1) / (input - 1));
+              break;
+            }
+            default: return;
+          }
         }
-        r = angleMode === 'DEG' ? (radiansOut * 180 / Math.PI) : radiansOut;
       }
 
       current = fmt(r);
@@ -1460,27 +1517,63 @@
       renderTop();
     }
 
+    function inputEuler() {
+      // Insert Euler's number (e) as a numeric constant.
+      // We replace the current entry (like most calculator constants).
+      if (current === 'Error') { current = '0'; }
+      current = fmt(Math.E);
+      overwrite = false;
+      renderBottom();
+      renderTop();
+    }
+
+    function applyFactorial() {
+      // n! for non-negative integers (bounded to avoid Infinity).
+      if (current === 'Error') { return; }
+      const n = toFiniteNumberOrNull(current);
+      if (n == null) return;
+      if (!Number.isInteger(n) || n < 0) { setCurrent('Error'); return; }
+      if (n > 170) { setCurrent('Error'); return; } // 171! overflows JS Number
+
+      let r = 1;
+      for (let i = 2; i <= n; i++) r *= i;
+      current = fmt(r);
+      overwrite = true;
+      renderBottom();
+      renderTop();
+      appendLogValue(current, `${fmt(n)}!`);
+    }
+
     function toggleAngleMode() {
       setAngleMode(angleMode === 'DEG' ? 'RAD' : 'DEG');
       setCookie('calc_angle', angleMode);
     }
 
     function updateTrigButtons() {
-      const modeLabel = angleMode === 'DEG' ? 'degrees' : 'radians';
-      const trigButtons = shell.querySelectorAll('button[data-action="sin"], button[data-action="cos"], button[data-action="tan"]');
+      const hyp = Boolean(trigHyperbolic);
+      const modeLabel = hyp ? 'hyperbolic' : (angleMode === 'DEG' ? 'degrees' : 'radians');
+      const trigButtons = shell.querySelectorAll('button[data-action="sin"], button[data-action="cos"], button[data-action="tan"], button[data-action="cot"]');
 
       trigButtons.forEach((btn) => {
         const action = btn.getAttribute('data-action');
         if (!action) return;
 
         if (!trigInverse) {
-          const name = action === 'sin' ? 'Sine' : action === 'cos' ? 'Cosine' : 'Tangent';
-          btn.textContent = action;
+          const name = hyp
+            ? (action === 'sin' ? 'Hyperbolic sine' : action === 'cos' ? 'Hyperbolic cosine' : action === 'tan' ? 'Hyperbolic tangent' : 'Hyperbolic cotangent')
+            : (action === 'sin' ? 'Sine' : action === 'cos' ? 'Cosine' : action === 'tan' ? 'Tangent' : 'Cotangent');
+          btn.textContent = hyp
+            ? (action === 'sin' ? 'sinh' : action === 'cos' ? 'cosh' : action === 'tan' ? 'tanh' : 'coth')
+            : action;
           btn.setAttribute('aria-label', `${name} (${modeLabel})`);
         } else {
-          const name = action === 'sin' ? 'Arc-sine' : action === 'cos' ? 'Arc-cosine' : 'Arc-tangent';
+          const name = hyp
+            ? (action === 'sin' ? 'Inverse hyperbolic sine' : action === 'cos' ? 'Inverse hyperbolic cosine' : action === 'tan' ? 'Inverse hyperbolic tangent' : 'Inverse hyperbolic cotangent')
+            : (action === 'sin' ? 'Arc-sine' : action === 'cos' ? 'Arc-cosine' : action === 'tan' ? 'Arc-tangent' : 'Arc-cotangent');
           // Use a common calculator-style label
-          btn.textContent = action === 'sin' ? 'sin⁻¹' : action === 'cos' ? 'cos⁻¹' : 'tan⁻¹';
+          btn.textContent = hyp
+            ? (action === 'sin' ? 'sinh⁻¹' : action === 'cos' ? 'cosh⁻¹' : action === 'tan' ? 'tanh⁻¹' : 'coth⁻¹')
+            : (action === 'sin' ? 'sin⁻¹' : action === 'cos' ? 'cos⁻¹' : action === 'tan' ? 'tan⁻¹' : 'cot⁻¹');
           btn.setAttribute('aria-label', `${name} (${modeLabel})`);
         }
       });
@@ -1489,6 +1582,12 @@
       if (invBtn) {
         invBtn.classList.toggle('accent', trigInverse);
         invBtn.setAttribute('aria-pressed', String(trigInverse));
+      }
+
+      const hypBtn = shell.querySelector('button[data-action="hyp"]');
+      if (hypBtn) {
+        hypBtn.classList.toggle('accent', Boolean(trigHyperbolic));
+        hypBtn.setAttribute('aria-pressed', String(Boolean(trigHyperbolic)));
       }
 
       // INV also toggles ln/log to their inverse exponent forms.
@@ -1547,6 +1646,11 @@
 
     function toggleTrigInverse() {
       trigInverse = !trigInverse;
+      updateTrigButtons();
+    }
+
+    function toggleTrigHyperbolic() {
+      trigHyperbolic = !trigHyperbolic;
       updateTrigButtons();
     }
 
@@ -2059,8 +2163,12 @@
         case 'sin': applyTrig('sin'); break;
         case 'cos': applyTrig('cos'); break;
         case 'tan': applyTrig('tan'); break;
+        case 'cot': applyTrig('cot'); break;
         case 'pi': inputPi(); break;
+        case 'euler': inputEuler(); break;
+        case 'fact': applyFactorial(); break;
         case 'inv': toggleTrigInverse(); break;
+        case 'hyp': toggleTrigHyperbolic(); break;
         case 'ln': trigInverse ? applyExp() : applyLn(); break;
         case 'log': trigInverse ? applyPow10() : applyLog10(); break;
         case 'expmark': inputExpMarker(); break;
