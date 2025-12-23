@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech - Български</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: none;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.stop {
+            background-color: #dc3545;
+        }
+        .status {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .voice-select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .voice-list {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #555;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Изговаряне на текст</h2>
+    <textarea id="textInput" rows="5">Здравейте! Това е тест на гласовата функция на български език. Мааму и прасе</textarea>
+    
+    <select id="voiceSelect" class="voice-select">
+        <option value="">Зареждане...</option>
+    </select>
+    
+    <div>
+        <button onclick="speak()">Изговори</button>
+        <button class="stop" onclick="stop()">Спри</button>
+    </div>
+
+    <div id="status" class="status">Готовност</div>
+    <div id="voiceList" class="voice-list"></div>
+</div>
+
+<script>
+    const synth = window.speechSynthesis;
+    const textInput = document.getElementById('textInput');
+    const statusDiv = document.getElementById('status');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const voiceListDiv = document.getElementById('voiceList');
+    
+    let voices = [];
+
+    function loadVoices() {
+        voices = synth.getVoices();
+        
+        voiceSelect.innerHTML = '';
+        voiceListDiv.innerHTML = '<strong>Налични гласове:</strong><br>';
+        
+        if (voices.length === 0) {
+            voiceSelect.innerHTML = '<option>Няма налични гласове</option>';
+            voiceListDiv.innerHTML += 'Не са открити гласове в браузъра';
+            return;
+        }
+
+        // Разделяне на български и други гласове
+        const bgVoices = voices.filter(v => v.lang.toLowerCase().includes('bg'));
+        const otherVoices = voices.filter(v => !v.lang.toLowerCase().includes('bg'));
+
+        if (bgVoices.length > 0) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = '✓ Български гласове';
+            bgVoices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.value = voices.indexOf(voice);
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (i === 0) option.selected = true;
+                optgroup.appendChild(option);
+            });
+            voiceSelect.appendChild(optgroup);
+            
+            statusDiv.textContent = `✓ Намерени ${bgVoices.length} български гласа`;
+            statusDiv.style.color = '#28a745';
+        } else {
+            statusDiv.innerHTML = '⚠ НЯМА български глас! <a href="#" onclick="showInstallInstructions(); return false;" style="color:#007bff">Как да инсталирам?</a>';
+            statusDiv.style.color = '#dc3545';
+        }
+
+        // Показване на други гласове
+        if (otherVoices.length > 0) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = 'Други гласове';
+            otherVoices.forEach((voice) => {
+                const option = document.createElement('option');
+                option.value = voices.indexOf(voice);
+                option.textContent = `${voice.name} (${voice.lang})`;
+                optgroup.appendChild(option);
+            });
+            voiceSelect.appendChild(optgroup);
+        }
+
+        // Списък на всички гласове
+        voices.forEach((voice, i) => {
+            const isBg = voice.lang.toLowerCase().includes('bg');
+            voiceListDiv.innerHTML += `${isBg ? '✓ <strong>' : ''}${i + 1}. ${voice.name} [${voice.lang}]${isBg ? '</strong>' : ''}<br>`;
+        });
+    }
+
+    function showInstallInstructions() {
+        const instructions = `
+<div class="warning">
+<strong>Как да инсталирам български TTS глас:</strong><br><br>
+<strong>Windows 10/11:</strong><br>
+1. Settings → Time & Language → Language & Region<br>
+2. Add Language → изберете "Български"<br>
+3. Кликнете на Български → Options<br>
+4. Install "Text-to-speech"<br>
+5. Рестартирайте браузъра<br><br>
+<strong>Алтернатива:</strong> Използвайте онлайн TTS като Google Translate или ResponsiveVoice
+</div>`;
+        
+        voiceListDiv.innerHTML = instructions;
+    }
+
+    function speak() {
+        if (synth.speaking) {
+            synth.cancel();
+        }
+
+        const text = textInput.value.trim();
+        if (text === '') {
+            statusDiv.textContent = 'Моля, въведете текст';
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Използване на избрания глас
+        const selectedIndex = parseInt(voiceSelect.value);
+        if (!isNaN(selectedIndex) && voices[selectedIndex]) {
+            utterance.voice = voices[selectedIndex];
+            utterance.lang = voices[selectedIndex].lang;
+        } else {
+            utterance.lang = 'bg-BG';
+        }
+        
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onstart = () => {
+            textInput.style.borderColor = '#007bff';
+            statusDiv.textContent = 'Изговаря се...';
+            statusDiv.style.color = '#007bff';
+        };
+
+        utterance.onend = () => {
+            textInput.style.borderColor = '#ddd';
+            statusDiv.textContent = 'Готово';
+            statusDiv.style.color = '#28a745';
+        };
+
+        utterance.onerror = (e) => {
+            statusDiv.textContent = `Грешка: ${e.error}`;
+            statusDiv.style.color = '#dc3545';
+        };
+
+        synth.speak(utterance);
+    }
+
+    function stop() {
+        synth.cancel();
+        textInput.style.borderColor = '#ddd';
+        statusDiv.textContent = 'Спряно';
+        statusDiv.style.color = '#666';
+    }
+
+    // Зареждане на гласовете
+    loadVoices();
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = loadVoices;
+    }
+</script>
+
+</body>
+</html>
