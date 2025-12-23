@@ -59,14 +59,21 @@ The mode pill shows the **current** mode (cycle on click: **STD → TRZ → SCI 
 - `√` (square root)
 - `x^y` (exponent)
 - `mod` (remainder; uses JavaScript `%` semantics)
+- `n!` (factorial for non-negative integers; errors for non-integers/negatives; limited to `n ≤ 170`)
 - `%` (percent)
 - `π` (pi constant)
+- `e` (Euler’s number constant)
 - `EXP` (scientific notation entry, e.g. `5.6e-4`)
 - `1/x` (reciprocal)
 - `|x|` (absolute value)
-- Trigonometry: `sin`, `cos`, `tan`
+- Trigonometry: `sin`, `cos`, `tan`, `cot`
+- **HYP** toggles hyperbolic trig:
+  - `sin/cos/tan/cot` → `sinh/cosh/tanh/coth`
+  - When **HYP** is on, **DEG/RAD** does not apply (hyperbolic uses the raw input)
 - **INV** toggles:
   - `sin/cos/tan` → `sin⁻¹/cos⁻¹/tan⁻¹`
+  - `cot` → `cot⁻¹`
+  - When **HYP** is ON, **INV** toggles hyperbolic inverses instead (`sinh⁻¹/cosh⁻¹/tanh⁻¹/coth⁻¹`)
   - `ln` → `e^x`
   - `log` → `10^x`
   - `√` → `x²`
@@ -85,6 +92,8 @@ The **DEG/RAD pill** changes how trig is interpreted:
 
 - Normal trig (`sin/cos/tan`): input is treated as degrees or radians.
 - Inverse trig (`sin⁻¹/cos⁻¹/tan⁻¹`): output is returned as degrees or radians.
+- `cot` follows the same DEG/RAD rules as `tan`.
+- When **HYP** is ON, DEG/RAD does not apply to `sinh/cosh/tanh/coth`.
 
 ### Currency conversion (STD/TRZ mode)
 
@@ -186,6 +195,7 @@ Memory operations are also written to the **Log** panel (MS/MC/MR/M+/M-).
 
 - `ln(x)` and `log(x)` require `x > 0`; otherwise the calculator shows `Error`.
 - Division by zero shows `Error`.
+- Some functions have real-number domain limits and will show `Error` when violated (e.g. `cosh⁻¹(x)` requires `x ≥ 1`, `tanh⁻¹(x)` requires $|x| < 1$, `coth(x)` is undefined at `0`).
 - While typing an incomplete number (e.g. `-`, `1e`, `1e-`), operations are ignored until the number is complete.
 - Very long results are automatically **compacted for display** (often into a shorter `...e...` form) so they fit the screen.
 
