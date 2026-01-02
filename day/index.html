@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sunrise & Day Length</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 15% -10%, #16212f 0%, #0b0f14 45%),
+                  radial-gradient(1200px 600px at 85% 110%, #14273b 0%, #0b0f14 50%),
+                  linear-gradient(180deg, #0a0e13, #0b0f14);
+      color: #e8f0ff;
+    }
+    .card {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 20px 22px;
+      border-radius: 16px;
+      background: rgba(20, 24, 31, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px) saturate(135%);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: 0.2px; }
+    p { margin: 4px 0 12px; color: #9fb0c7; }
+    canvas { width: 100%; height: auto; }
+    .meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: #9fb0c7; }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    a { color: #6ca8ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sunrise, Sunset, and Day Length</h1>
+    <p>Default location: Sofia, Bulgaria (42.6977, 23.3219) in Europe/Sofia time. Default range: three months before and after today.</p>
+    <div class="controls" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 14px;">
+      <label style="color:#9fb0c7; font-size:13px;">Start
+        <input type="date" id="startDate" style="margin-left:6px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color:#e8f0ff;" />
+      </label>
+      <label style="color:#9fb0c7; font-size:13px;">End
+        <input type="date" id="endDate" style="margin-left:6px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color:#e8f0ff;" />
+      </label>
+      <label style="color:#9fb0c7; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="dstToggle" aria-label="Use daylight saving time" />
+        Use DST
+      </label>
+      <label style="color:#9fb0c7; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+        Country
+        <input id="countrySelect" list="countryList" style="margin-left:6px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color:#e8f0ff;" placeholder="Type country" />
+        <datalist id="countryList"></datalist>
+      </label>
+      <label style="color:#9fb0c7; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+        City
+        <input id="citySelect" list="cityList" style="margin-left:6px; padding:6px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color:#e8f0ff;" placeholder="Type city or time zone" />
+        <datalist id="cityList"></datalist>
+      </label>
+      <span id="rangeError" class="badge" style="display:none; background: rgba(255, 92, 122, 0.28); border-color: rgba(255,255,255,0.12); color:#ffeaf0;">Invalid range</span>
+    </div>
+    <div class="meta" id="meta"></div>
+    <canvas id="sunChart" role="img" aria-label="Chart of sunrise, sunset, and day length"></canvas>
+  </div>
+
+  <script>
+    // Register service worker for installability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    let chart; // Chart.js instance
+    function addMonthsUTC(date, months) {
+      const d = new Date(date.getTime());
+      d.setUTCMonth(d.getUTCMonth() + months);
+      return d;
+    }
+    const todayUTC = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+    const defaultStart = addMonthsUTC(todayUTC, -3);
+    const defaultEnd = addMonthsUTC(todayUTC, +3);
+    const config = {
+      start: defaultStart,
+      end: defaultEnd,
+      lat: 42.6977, // Sofia
+      lon: 23.3219,
+      timeZone: 'Europe/Sofia',
+      useFixedOffset: true,           // Display clock without DST changes
+      fixedOffsetMinutes: 120,        // EET standard time: UTC+02:00
+      selectedCountryKey: 'bg',
+      selectedCityTz: 'Europe/Sofia',
+      selectedCityName: 'Sofia'
+    };
+
+    const LOCATIONS = {
+      bg: {
+        country: 'Bulgaria',
+        // Bulgaria has a single time zone: Europe/Sofia
+        cities: {
+          'Europe/Sofia': { name: 'Sofia', lat: 42.6977, lon: 23.3219, fixedOffsetMinutes: 120 }
+        }
+      },
+      uk: {
+        country: 'United Kingdom',
+        cities: {
+          'Europe/London': { name: 'London', lat: 51.5074, lon: -0.1278, fixedOffsetMinutes: 0 }
+        }
+      },
+      us: {
+        country: 'United States',
+        cities: {
+          'America/New_York': { name: 'New York', lat: 40.7128, lon: -74.0060, fixedOffsetMinutes: -300 },
+          'America/Chicago': { name: 'Chicago', lat: 41.8781, lon: -87.6298, fixedOffsetMinutes: -360 },
+          'America/Denver': { name: 'Denver', lat: 39.7392, lon: -104.9903, fixedOffsetMinutes: -420 },
+          'America/Los_Angeles': { name: 'Los Angeles', lat: 34.0522, lon: -118.2437, fixedOffsetMinutes: -480 }
+        }
+      },
+      jp: {
+        country: 'Japan',
+        cities: {
+          'Asia/Tokyo': { name: 'Tokyo', lat: 35.6762, lon: 139.6503, fixedOffsetMinutes: 540 }
+        }
+      },
+      au: {
+        country: 'Australia',
+        cities: {
+          'Australia/Sydney': { name: 'Sydney', lat: -33.8688, lon: 151.2093, fixedOffsetMinutes: 600 },
+          'Australia/Melbourne': { name: 'Melbourne', lat: -37.8136, lon: 144.9631, fixedOffsetMinutes: 600 }
+        }
+      },
+      de: {
+        country: 'Germany',
+        cities: {
+          'Europe/Berlin': { name: 'Berlin', lat: 52.5200, lon: 13.4050, fixedOffsetMinutes: 60 },
+          'Europe/Berlin#Munich': { name: 'Munich', lat: 48.1351, lon: 11.5820, fixedOffsetMinutes: 60 }
+        }
+      }
+    };
+
+    function setLocation(countryKey, tzKey) {
+      const country = LOCATIONS[countryKey] || LOCATIONS.bg;
+      const city = country.cities[tzKey] || country.cities[Object.keys(country.cities)[0]];
+      const name = city.name || tzKey.split('/').pop().replace('#', ' ');
+      config.selectedCountryKey = countryKey;
+      config.selectedCityTz = tzKey;
+      config.selectedCityName = name;
+      config.lat = city.lat;
+      config.lon = city.lon;
+      config.timeZone = tzKey.split('#')[0];
+      config.fixedOffsetMinutes = city.fixedOffsetMinutes;
+    }
+
+    function populateCityOptions(countryKey) {
+      const cityList = document.getElementById('cityList');
+      if (!cityList) return;
+      const country = LOCATIONS[countryKey] || LOCATIONS.bg;
+      cityList.innerHTML = '';
+      for (const tzKey of Object.keys(country.cities)) {
+        const city = country.cities[tzKey];
+        const name = city.name || tzKey.split('/').pop();
+        const opt = document.createElement('option');
+        opt.value = `${name} (${tzKey.split('#')[0]})`;
+        cityList.appendChild(opt);
+      }
+    }
+
+    function populateCountryOptions() {
+      const countryList = document.getElementById('countryList');
+      if (!countryList) return;
+      countryList.innerHTML = '';
+      for (const key of Object.keys(LOCATIONS)) {
+        const opt = document.createElement('option');
+        opt.value = LOCATIONS[key].country || key;
+        countryList.appendChild(opt);
+      }
+    }
+
+    function resolveCountryKey(input) {
+      const s = String(input || '').trim().toLowerCase();
+      if (!s) return null;
+      // Try ISO-like code
+      if (LOCATIONS[s]) return s;
+      // Match by country name
+      for (const [code, entry] of Object.entries(LOCATIONS)) {
+        const name = String(entry.country || code).toLowerCase();
+        if (name === s) return code;
+      }
+      // Fuzzy startsWith
+      for (const [code, entry] of Object.entries(LOCATIONS)) {
+        const name = String(entry.country || code).toLowerCase();
+        if (name.startsWith(s)) return code;
+      }
+      return null;
+    }
+
+    function resolveCityTz(countryKey, input) {
+      const s = String(input || '').trim();
+      if (!s) return null;
+      const country = LOCATIONS[countryKey];
+      if (!country) return null;
+      const byName = s.toLowerCase();
+      // Try parse tz from parentheses
+      const m = s.match(/\(([^)]+)\)$/);
+      if (m && country.cities[m[1]]) return m[1];
+      // Exact tz match
+      if (country.cities[s]) return s;
+      // Match by city name
+      for (const [tzKey, city] of Object.entries(country.cities)) {
+        const name = String(city.name || tzKey.split('/').pop()).toLowerCase();
+        if (name === byName) return tzKey;
+      }
+      // Fuzzy startsWith
+      for (const [tzKey, city] of Object.entries(country.cities)) {
+        const name = String(city.name || tzKey.split('/').pop()).toLowerCase();
+        if (name.startsWith(byName)) return tzKey;
+      }
+      return null;
+    }
+
+    function setCountryInputValue(countryKey) {
+      const countryEl = document.getElementById('countrySelect');
+      if (!countryEl) return;
+      const entry = LOCATIONS[countryKey];
+      countryEl.value = entry ? (entry.country || countryKey) : '';
+    }
+
+    function setCityInputValue(countryKey, tzKey) {
+      const cityEl = document.getElementById('citySelect');
+      if (!cityEl) return;
+      const country = LOCATIONS[countryKey];
+      const city = country?.cities?.[tzKey];
+      const name = city ? (city.name || tzKey.split('/').pop()) : '';
+      cityEl.value = name ? `${name} (${tzKey.split('#')[0]})` : '';
+    }
+
+    async function loadLocationsDataset() {
+      // Try compressed capitals dataset first; fall back to locations.json (parent folder)
+      const DATA_ROOT = '..';
+      const built = {};
+      const buildFromCapitals = (data) => {
+        // Expected shape:
+        // { countries: [ [code, countryName, [ [cityName, tz, lat, lon, offset], ... ]], ... ] }
+        const src = Array.isArray(data?.countries) ? data.countries : [];
+        for (const entry of src) {
+          const code = String(entry?.[0] || '');
+          const countryName = String(entry?.[1] || code);
+          const citiesArr = Array.isArray(entry?.[2]) ? entry[2] : [];
+          const citiesObj = {};
+          for (const c of citiesArr) {
+            const name = String(c?.[0] || '').trim();
+            const tz = String(c?.[1] || '').trim();
+            const lat = Number(c?.[2]);
+            const lon = Number(c?.[3]);
+            const fixedOffsetMinutes = Number(c?.[4] || 0);
+            if (!tz) continue;
+            citiesObj[tz] = { name: name || tz.split('/').pop(), lat, lon, fixedOffsetMinutes };
+          }
+          if (Object.keys(citiesObj).length) built[code] = { country: countryName, cities: citiesObj };
+        }
+      };
+
+      try {
+        const resCap = await fetch(`${DATA_ROOT}/capitals.min.json`, { cache: 'no-store' });
+        if (resCap.ok) {
+          const data = await resCap.json();
+          buildFromCapitals(data);
+        }
+      } catch { /* ignore */ }
+
+      if (!Object.keys(built).length) {
+        try {
+          const res = await fetch(`${DATA_ROOT}/locations.json`, { cache: 'no-store' });
+          if (!res.ok) throw new Error('fetch failed');
+          const data = await res.json();
+          const src = data && data.countries ? data.countries : {};
+          for (const [code, entry] of Object.entries(src)) {
+            const countryName = String(entry.country || code);
+            const citiesArr = Array.isArray(entry.cities) ? entry.cities : [];
+            const citiesObj = {};
+            for (const c of citiesArr) {
+              const tz = String(c.timeZone || '').trim();
+              if (!tz) continue;
+              citiesObj[tz] = {
+                name: String(c.name || tz.split('/').pop()),
+                lat: Number(c.lat),
+                lon: Number(c.lon),
+                fixedOffsetMinutes: Number(c.fixedOffsetMinutes || 0)
+              };
+            }
+            if (Object.keys(citiesObj).length) built[code] = { country: countryName, cities: citiesObj };
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (Object.keys(built).length) Object.assign(LOCATIONS, built);
+    }
+
+    // Persistence (localStorage)
+    const PREFS_KEY = 'day_prefs_v1';
+    function loadPreferences() {
+      try {
+        const raw = localStorage.getItem(PREFS_KEY);
+        if (!raw) return null;
+        const p = JSON.parse(raw);
+        return (p && typeof p === 'object') ? p : null;
+      } catch { return null; }
+    }
+
+    function savePreferences() {
+      try {
+        const startEl = document.getElementById('startDate');
+        const endEl = document.getElementById('endDate');
+        const dstEl = document.getElementById('dstToggle');
+        const countryEl = document.getElementById('countrySelect');
+        const cityEl = document.getElementById('citySelect');
+        const payload = {
+          start: startEl ? String(startEl.value || '') : toInputDateString(config.start),
+          end: endEl ? String(endEl.value || '') : toInputDateString(config.end),
+          useFixedOffset: Boolean(config.useFixedOffset),
+          countryKey: String(config.selectedCountryKey || ''),
+          cityTz: String(config.selectedCityTz || ''),
+          countryLabel: countryEl ? String(countryEl.value || '') : '',
+          cityLabel: cityEl ? String(cityEl.value || '') : ''
+        };
+        localStorage.setItem(PREFS_KEY, JSON.stringify(payload));
+      } catch { /* ignore */ }
+    }
+
+    function formatDay(date) {
+      return new Intl.DateTimeFormat('en-GB', { timeZone: config.timeZone, month: 'short', day: 'numeric' }).format(date);
+    }
+
+    function minutesInTz(date, timeZone) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit'
+      }).formatToParts(date);
+      const h = Number(parts.find((p) => p.type === 'hour')?.value || 0);
+      const m = Number(parts.find((p) => p.type === 'minute')?.value || 0);
+      return h * 60 + m;
+    }
+
+    function minutesFixedOffset(date, offsetMinutes) {
+      const h = date.getUTCHours();
+      const m = date.getUTCMinutes();
+      let total = h * 60 + m + (offsetMinutes || 0);
+      const dayMins = 24 * 60;
+      total = ((total % dayMins) + dayMins) % dayMins; // wrap to 0..1439
+      return total;
+    }
+
+    function minutesForDisplay(date) {
+      return config.useFixedOffset
+        ? minutesFixedOffset(date, config.fixedOffsetMinutes)
+        : minutesInTz(date, config.timeZone);
+    }
+
+    function formatMinutes(mins) {
+      const h = Math.floor(mins / 60);
+      const m = Math.round(mins % 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function gatherData() {
+      const labels = [];
+      const sunrise = [];
+      const sunset = [];
+      const dayLength = [];
+
+      const cursor = new Date(config.start.getTime());
+      while (cursor <= config.end) {
+        const times = SunCalc.getTimes(cursor, config.lat, config.lon);
+        const srMins = minutesForDisplay(times.sunrise);
+        const ssMins = minutesForDisplay(times.sunset);
+        labels.push(formatDay(cursor));
+        sunrise.push(srMins / 60);
+        sunset.push(ssMins / 60);
+        dayLength.push((ssMins - srMins) / 60);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      return { labels, sunrise, sunset, dayLength };
+    }
+
+    function renderMeta() {
+      const meta = document.getElementById('meta');
+      if (!meta) return;
+      meta.innerHTML = '';
+      const countryName = LOCATIONS[config.selectedCountryKey]?.country || 'Custom';
+      const items = [
+        `City: ${config.selectedCityName}, ${countryName}`,
+        `Latitude: ${config.lat.toFixed(4)}°`,
+        `Longitude: ${config.lon.toFixed(4)}°`,
+        `Time zone: ${config.timeZone}`,
+        `Range: ${formatDay(config.start)} – ${formatDay(config.end)}`
+      ];
+      // Clock mode (DST off if fixed offset)
+      const fmtOffset = (mins) => {
+        const sign = mins >= 0 ? '+' : '-';
+        const abs = Math.abs(mins);
+        const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+        const mm = String(abs % 60).padStart(2, '0');
+        return `${sign}${hh}:${mm}`;
+      };
+      items.push(
+        config.useFixedOffset
+          ? `Clock: Standard time (UTC${fmtOffset(config.fixedOffsetMinutes)})`
+          : `Clock: Local time (with DST)`
+      );
+      // Add minimal day length within current range
+      try {
+        const { labels, sunrise, sunset, dayLength } = gatherData();
+
+        const findMinMax = (arr) => {
+          let minIdx = -1, maxIdx = -1;
+          let minVal = Infinity, maxVal = -Infinity;
+          for (let i = 0; i < arr.length; i++) {
+            const v = arr[i];
+            if (typeof v === 'number' && isFinite(v)) {
+              if (v < minVal) { minVal = v; minIdx = i; }
+              if (v > maxVal) { maxVal = v; maxIdx = i; }
+            }
+          }
+          return { minIdx, minVal, maxIdx, maxVal };
+        };
+
+        // Day length (hours)
+        if (Array.isArray(dayLength) && dayLength.length) {
+          const { minIdx, minVal, maxIdx, maxVal } = findMinMax(dayLength);
+          if (minIdx !== -1) items.push(`Min day length: ${minVal.toFixed(2)} h on ${labels[minIdx] || formatDay(config.start)}`);
+          if (maxIdx !== -1) items.push(`Max day length: ${maxVal.toFixed(2)} h on ${labels[maxIdx] || formatDay(config.start)}`);
+        }
+
+        // Sunrise (hours -> HH:MM)
+        if (Array.isArray(sunrise) && sunrise.length) {
+          const { minIdx, minVal, maxIdx, maxVal } = findMinMax(sunrise);
+          if (minIdx !== -1) items.push(`Earliest sunrise: ${formatMinutes(Math.round(minVal * 60))} on ${labels[minIdx] || formatDay(config.start)}`);
+          if (maxIdx !== -1) items.push(`Latest sunrise: ${formatMinutes(Math.round(maxVal * 60))} on ${labels[maxIdx] || formatDay(config.start)}`);
+        }
+
+        // Sunset (hours -> HH:MM)
+        if (Array.isArray(sunset) && sunset.length) {
+          const { minIdx, minVal, maxIdx, maxVal } = findMinMax(sunset);
+          if (minIdx !== -1) items.push(`Earliest sunset: ${formatMinutes(Math.round(minVal * 60))} on ${labels[minIdx] || formatDay(config.start)}`);
+          if (maxIdx !== -1) items.push(`Latest sunset: ${formatMinutes(Math.round(maxVal * 60))} on ${labels[maxIdx] || formatDay(config.start)}`);
+        }
+      } catch {}
+      for (const text of items) {
+        const span = document.createElement('span');
+        span.className = 'badge';
+        span.textContent = text;
+        meta.appendChild(span);
+      }
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('sunChart');
+      if (!ctx) return;
+      const { labels, sunrise, sunset, dayLength } = gatherData();
+
+      const timeTick = (value) => formatMinutes(Number(value * 60));
+
+      if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = sunrise;
+        chart.data.datasets[1].data = sunset;
+        chart.data.datasets[2].data = dayLength;
+        chart.update();
+        return;
+      }
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Sunrise',
+              data: sunrise,
+              borderColor: '#6ca8ff',
+              backgroundColor: 'rgba(108, 168, 255, 0.2)',
+              tension: 0.25,
+              fill: false,
+              pointRadius: 2
+            },
+            {
+              label: 'Sunset',
+              data: sunset,
+              borderColor: '#ffd369',
+              backgroundColor: 'rgba(255, 211, 105, 0.25)',
+              tension: 0.25,
+              fill: false,
+              pointRadius: 2
+            },
+            {
+              label: 'Day length (hours)',
+              data: dayLength,
+              borderColor: '#00d4ff',
+              backgroundColor: 'rgba(0, 212, 255, 0.2)',
+              borderDash: [6, 6],
+              tension: 0.25,
+              fill: false,
+              pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          animation: false,
+          transitions: { active: { animation: { duration: 0 } } },
+          interaction: { mode: 'nearest', intersect: false },
+          maintainAspectRatio: true,
+          aspectRatio: 1.5,
+          scales: {
+            y: {
+              min: 6,
+              max: 20,
+              ticks: {
+                callback: timeTick
+              },
+              title: {
+                display: true,
+                text: 'Hours (local time)'
+              }
+            },
+            x: {
+              ticks: {
+                maxTicksLimit: 10
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.dataset.label || '';
+                  const v = ctx.raw;
+                  if (ctx.datasetIndex === 2) return `${label}: ${v.toFixed(2)} h`;
+                  return `${label}: ${formatMinutes(Math.round(v * 60))}`;
+                }
+              }
+            },
+            legend: {
+              position: 'top'
+            }
+          }
+        }
+      });
+    }
+
+      function toInputDateString(d) {
+        // YYYY-MM-DD from UTC date
+        return new Date(d.getTime()).toISOString().slice(0, 10);
+      }
+
+      function parseInputDate(val) {
+        if (!val) return null;
+        // Interpret selected day at 00:00 UTC to avoid local TZ shifts
+        const d = new Date(val + 'T00:00:00Z');
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      function initDateInputs() {
+        const startEl = document.getElementById('startDate');
+        const endEl = document.getElementById('endDate');
+        const dstEl = document.getElementById('dstToggle');
+        const cityEl = document.getElementById('citySelect');
+        const countryEl = document.getElementById('countrySelect');
+        if (!startEl || !endEl) return;
+
+        // Apply persisted values if available
+        const prefs = loadPreferences();
+        if (prefs) {
+          const s = parseInputDate(prefs.start);
+          const e = parseInputDate(prefs.end);
+          if (s && e && s.getTime() <= e.getTime()) {
+            config.start = s;
+            config.end = e;
+          }
+          if (typeof prefs.useFixedOffset === 'boolean') {
+            config.useFixedOffset = prefs.useFixedOffset;
+          }
+          if (typeof prefs.countryKey === 'string' && prefs.countryKey) {
+            config.selectedCountryKey = prefs.countryKey;
+          }
+          if (typeof prefs.cityTz === 'string' && prefs.cityTz) {
+            config.selectedCityTz = prefs.cityTz;
+          }
+        }
+
+        startEl.value = toInputDateString(config.start);
+        endEl.value = toInputDateString(config.end);
+        const onChange = () => updateRangeFromInputs();
+        startEl.addEventListener('change', onChange);
+        endEl.addEventListener('change', onChange);
+
+        if (dstEl) {
+          // Checked means use local time with DST; unchecked means fixed offset (no DST)
+          dstEl.checked = !config.useFixedOffset;
+          dstEl.addEventListener('change', () => {
+            config.useFixedOffset = !dstEl.checked;
+            renderMeta();
+            renderChart();
+            savePreferences();
+          });
+        }
+
+        if (countryEl && cityEl) {
+          // Load dataset, then populate options
+          loadLocationsDataset().then(() => {
+            populateCountryOptions();
+            const initialCountry = config.selectedCountryKey in LOCATIONS ? config.selectedCountryKey : Object.keys(LOCATIONS)[0];
+            populateCityOptions(initialCountry);
+            const initialTz = config.selectedCityTz in (LOCATIONS[initialCountry]?.cities || {})
+              ? config.selectedCityTz
+              : Object.keys(LOCATIONS[initialCountry].cities)[0];
+            setLocation(initialCountry, initialTz);
+            setCountryInputValue(initialCountry);
+            setCityInputValue(initialCountry, initialTz);
+            renderMeta();
+            renderChart();
+            savePreferences();
+          });
+
+          const onCountryChange = () => {
+            const key = resolveCountryKey(countryEl.value);
+            if (!key) return;
+            populateCityOptions(key);
+            const firstTz = Object.keys(LOCATIONS[key].cities)[0];
+            setLocation(key, firstTz);
+            setCityInputValue(key, firstTz);
+            renderMeta();
+            renderChart();
+            savePreferences();
+          };
+          countryEl.addEventListener('change', onCountryChange);
+          countryEl.addEventListener('input', onCountryChange);
+
+          const onCityChange = () => {
+            const key = resolveCountryKey(countryEl.value) || config.selectedCountryKey;
+            const tz = resolveCityTz(key, cityEl.value);
+            if (!tz) return;
+            setLocation(key, tz);
+            renderMeta();
+            renderChart();
+            savePreferences();
+          };
+          cityEl.addEventListener('change', onCityChange);
+          cityEl.addEventListener('input', onCityChange);
+        }
+      }
+
+      function updateRangeFromInputs() {
+        const startEl = document.getElementById('startDate');
+        const endEl = document.getElementById('endDate');
+        const errEl = document.getElementById('rangeError');
+        if (!startEl || !endEl) return;
+        const s = parseInputDate(startEl.value);
+        const e = parseInputDate(endEl.value);
+        const valid = s && e && s.getTime() <= e.getTime();
+        if (!valid) {
+          if (errEl) errEl.style.display = '';
+          return;
+        }
+        if (errEl) errEl.style.display = 'none';
+        config.start = s;
+        config.end = e;
+        renderMeta();
+        renderChart();
+        savePreferences();
+      }
+
+    renderMeta();
+    initDateInputs();
+    renderChart();
+    // Persist initial defaults if nothing is stored yet
+    savePreferences();
+  </script>
+</body>
+</html>

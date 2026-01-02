@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Day App Icon: globe with sun">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#16212f"/>
+      <stop offset="100%" stop-color="#0b0f14"/>
+    </radialGradient>
+    <radialGradient id="globeGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2a74b8"/>
+      <stop offset="100%" stop-color="#0f3a66"/>
+    </radialGradient>
+    <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe58a"/>
+      <stop offset="100%" stop-color="#ffb300"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+  <!-- Globe -->
+  <g transform="translate(128,128)">
+    <circle cx="128" cy="128" r="120" fill="url(#globeGrad)" stroke="#11324f" stroke-width="4"/>
+    <!-- Parallels -->
+    <g stroke="#6ca8ff" opacity="0.65" stroke-width="2" fill="none">
+      <ellipse cx="128" cy="128" rx="100" ry="60"/>
+      <ellipse cx="128" cy="128" rx="110" ry="40"/>
+      <ellipse cx="128" cy="128" rx="80" ry="20"/>
+    </g>
+    <!-- Meridians -->
+    <g stroke="#6ca8ff" opacity="0.65" stroke-width="2" fill="none">
+      <path d="M128 8 C170 40 190 88 190 128 C190 168 170 216 128 248"/>
+      <path d="M128 8 C86 40 66 88 66 128 C66 168 86 216 128 248"/>
+      <circle cx="128" cy="128" r="100" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Sun at top-right -->
+  <g transform="translate(320,72)">
+    <circle cx="64" cy="64" r="40" fill="url(#sunGrad)" stroke="#ffd369" stroke-width="3"/>
+    <!-- Rays -->
+    <g stroke="#ffd369" stroke-width="6" stroke-linecap="round">
+      <line x1="64" y1="10" x2="64" y2="-14"/>
+      <line x1="64" y1="118" x2="64" y2="142"/>
+      <line x1="10" y1="64" x2="-14" y2="64"/>
+      <line x1="118" y1="64" x2="142" y2="64"/>
+      <line x1="24" y1="24" x2="6" y2="6"/>
+      <line x1="104" y1="104" x2="122" y2="122"/>
+      <line x1="24" y1="104" x2="6" y2="122"/>
+      <line x1="104" y1="24" x2="122" y2="6"/>
+    </g>
+  </g>
+
+  <!-- Subtle shadow under sun -->
+  <ellipse cx="384" cy="136" rx="60" ry="12" fill="#000" opacity="0.2"/>
+</svg>

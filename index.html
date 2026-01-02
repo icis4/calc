@@ -57,6 +57,18 @@
       overflow: hidden;
     }
 
+    /* Info panel on the right, always visible */
+    .info-panel {
+      width: min(92vw, 320px);
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 25px 60px var(--shadow-1), inset 0 1px 0 var(--shadow-2);
+      backdrop-filter: blur(18px) saturate(135%);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+      overflow: hidden;
+    }
+
     .log-header {
       display: flex;
       align-items: center;
@@ -457,8 +469,6 @@
     <main class="shell" id="calc">
       <div class="chrome">
       <div class="chrome-actions">
-        <div class="pill" id="toggleInstall" tabindex="0" role="button" aria-label="Add shortcut to home screen" style="display:none">Add</div>
-        <div class="pill" id="toggleHelp" tabindex="0" role="button" aria-pressed="false" aria-label="Open help">Help</div>
         <div class="pill" id="toggleLog" tabindex="0" role="button" aria-pressed="false" aria-label="Show/hide log panel">LOG</div>
         <div class="pill" id="toggleAngle" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle angle mode">DEG</div>
         <div class="pill" id="toggleSci" tabindex="0" role="button" aria-pressed="false" aria-label="Toggle calculator mode (STD/TRZ/SCI)">STD</div>
@@ -566,6 +576,22 @@
       </div>
       <div class="log-list" id="logList" aria-live="polite" aria-atomic="false"></div>
       <div class="log-hint">Double-click an item to copy to display</div>
+    </aside>
+    <aside class="info-panel" aria-label="Info panel">
+      <div class="log-header">
+        <div>Info</div>
+      </div>
+      <div style="padding:12px; display:grid; gap:10px;">
+        <div class="log-actions">
+          <button class="log-btn" id="toggleInstall" type="button" aria-label="Add shortcut to home screen" style="display:none">Add</button>
+          <button class="log-btn" id="toggleHelp" type="button" aria-label="Open help">Help</button>
+        </div>
+        <div class="log-actions" aria-label="Links">
+          <a class="log-btn" id="infoLicense" href="/LICENSE" aria-label="Open License">License</a>
+          <a class="log-btn" href="https://github.com/icis4/calc" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub repository">GitHub</a>
+          <a class="log-btn" href="https://github.com/icis4/calc/issues" target="_blank" rel="noopener noreferrer" aria-label="Report a bug or request a feature">Issues</a>
+        </div>
+      </div>
     </aside>
   </div>
 
@@ -2286,6 +2312,14 @@
     const footerLicense = document.getElementById('footerLicense');
     if (footerLicense) {
       footerLicense.addEventListener('click', (e) => {
+        e.preventDefault();
+        openDocInModal('/LICENSE', 'License');
+      });
+    }
+
+    const infoLicense = document.getElementById('infoLicense');
+    if (infoLicense) {
+      infoLicense.addEventListener('click', (e) => {
         e.preventDefault();
         openDocInModal('/LICENSE', 'License');
       });

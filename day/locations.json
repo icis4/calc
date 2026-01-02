@@ -1,0 +1,489 @@
+{
+  "countries": {
+    "bg": {
+      "country": "Bulgaria",
+      "cities": [
+        { "name": "Sofia", "timeZone": "Europe/Sofia", "lat": 42.6977, "lon": 23.3219, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "uk": {
+      "country": "United Kingdom",
+      "cities": [
+        { "name": "London", "timeZone": "Europe/London", "lat": 51.5074, "lon": -0.1278, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "us": {
+      "country": "United States",
+      "cities": [
+        { "name": "New York", "timeZone": "America/New_York", "lat": 40.7128, "lon": -74.0060, "fixedOffsetMinutes": -300 },
+        { "name": "Chicago", "timeZone": "America/Chicago", "lat": 41.8781, "lon": -87.6298, "fixedOffsetMinutes": -360 },
+        { "name": "Denver", "timeZone": "America/Denver", "lat": 39.7392, "lon": -104.9903, "fixedOffsetMinutes": -420 },
+        { "name": "Los Angeles", "timeZone": "America/Los_Angeles", "lat": 34.0522, "lon": -118.2437, "fixedOffsetMinutes": -480 }
+      ]
+    },
+    "ca": {
+      "country": "Canada",
+      "cities": [
+        { "name": "Toronto", "timeZone": "America/Toronto", "lat": 43.6532, "lon": -79.3832, "fixedOffsetMinutes": -300 },
+        { "name": "Vancouver", "timeZone": "America/Vancouver", "lat": 49.2827, "lon": -123.1207, "fixedOffsetMinutes": -480 }
+      ]
+    },
+    "mx": {
+      "country": "Mexico",
+      "cities": [
+        { "name": "Mexico City", "timeZone": "America/Mexico_City", "lat": 19.4326, "lon": -99.1332, "fixedOffsetMinutes": -360 }
+      ]
+    },
+    "br": {
+      "country": "Brazil",
+      "cities": [
+        { "name": "São Paulo", "timeZone": "America/Sao_Paulo", "lat": -23.5505, "lon": -46.6333, "fixedOffsetMinutes": -180 }
+      ]
+    },
+    "ar": {
+      "country": "Argentina",
+      "cities": [
+        { "name": "Buenos Aires", "timeZone": "America/Argentina/Buenos_Aires", "lat": -34.6037, "lon": -58.3816, "fixedOffsetMinutes": -180 }
+      ]
+    },
+    "cl": {
+      "country": "Chile",
+      "cities": [
+        { "name": "Santiago", "timeZone": "America/Santiago", "lat": -33.4489, "lon": -70.6693, "fixedOffsetMinutes": -240 }
+      ]
+    },
+    "co": {
+      "country": "Colombia",
+      "cities": [
+        { "name": "Bogotá", "timeZone": "America/Bogota", "lat": 4.7110, "lon": -74.0721, "fixedOffsetMinutes": -300 }
+      ]
+    },
+    "pe": {
+      "country": "Peru",
+      "cities": [
+        { "name": "Lima", "timeZone": "America/Lima", "lat": -12.0464, "lon": -77.0428, "fixedOffsetMinutes": -300 }
+      ]
+    },
+    "ve": {
+      "country": "Venezuela",
+      "cities": [
+        { "name": "Caracas", "timeZone": "America/Caracas", "lat": 10.4806, "lon": -66.9036, "fixedOffsetMinutes": -240 }
+      ]
+    },
+    "ec": {
+      "country": "Ecuador",
+      "cities": [
+        { "name": "Quito", "timeZone": "America/Guayaquil", "lat": -0.1807, "lon": -78.4678, "fixedOffsetMinutes": -300 }
+      ]
+    },
+    "bo": {
+      "country": "Bolivia",
+      "cities": [
+        { "name": "La Paz", "timeZone": "America/La_Paz", "lat": -16.4897, "lon": -68.1193, "fixedOffsetMinutes": -240 }
+      ]
+    },
+    "py": {
+      "country": "Paraguay",
+      "cities": [
+        { "name": "Asunción", "timeZone": "America/Asuncion", "lat": -25.2637, "lon": -57.5759, "fixedOffsetMinutes": -240 }
+      ]
+    },
+    "uy": {
+      "country": "Uruguay",
+      "cities": [
+        { "name": "Montevideo", "timeZone": "America/Montevideo", "lat": -34.9011, "lon": -56.1645, "fixedOffsetMinutes": -180 }
+      ]
+    },
+    "fr": {
+      "country": "France",
+      "cities": [
+        { "name": "Paris", "timeZone": "Europe/Paris", "lat": 48.8566, "lon": 2.3522, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "de": {
+      "country": "Germany",
+      "cities": [
+        { "name": "Berlin", "timeZone": "Europe/Berlin", "lat": 52.5200, "lon": 13.4050, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "it": {
+      "country": "Italy",
+      "cities": [
+        { "name": "Rome", "timeZone": "Europe/Rome", "lat": 41.9028, "lon": 12.4964, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "es": {
+      "country": "Spain",
+      "cities": [
+        { "name": "Madrid", "timeZone": "Europe/Madrid", "lat": 40.4168, "lon": -3.7038, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "nl": {
+      "country": "Netherlands",
+      "cities": [
+        { "name": "Amsterdam", "timeZone": "Europe/Amsterdam", "lat": 52.3676, "lon": 4.9041, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "be": {
+      "country": "Belgium",
+      "cities": [
+        { "name": "Brussels", "timeZone": "Europe/Brussels", "lat": 50.8503, "lon": 4.3517, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "se": {
+      "country": "Sweden",
+      "cities": [
+        { "name": "Stockholm", "timeZone": "Europe/Stockholm", "lat": 59.3293, "lon": 18.0686, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "no": {
+      "country": "Norway",
+      "cities": [
+        { "name": "Oslo", "timeZone": "Europe/Oslo", "lat": 59.9139, "lon": 10.7522, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "fi": {
+      "country": "Finland",
+      "cities": [
+        { "name": "Helsinki", "timeZone": "Europe/Helsinki", "lat": 60.1699, "lon": 24.9384, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "dk": {
+      "country": "Denmark",
+      "cities": [
+        { "name": "Copenhagen", "timeZone": "Europe/Copenhagen", "lat": 55.6761, "lon": 12.5683, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "cz": {
+      "country": "Czechia",
+      "cities": [
+        { "name": "Prague", "timeZone": "Europe/Prague", "lat": 50.0755, "lon": 14.4378, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "at": {
+      "country": "Austria",
+      "cities": [
+        { "name": "Vienna", "timeZone": "Europe/Vienna", "lat": 48.2082, "lon": 16.3738, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "ch": {
+      "country": "Switzerland",
+      "cities": [
+        { "name": "Zurich", "timeZone": "Europe/Zurich", "lat": 47.3769, "lon": 8.5417, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "pt": {
+      "country": "Portugal",
+      "cities": [
+        { "name": "Lisbon", "timeZone": "Europe/Lisbon", "lat": 38.7223, "lon": -9.1393, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "gr": {
+      "country": "Greece",
+      "cities": [
+        { "name": "Athens", "timeZone": "Europe/Athens", "lat": 37.9838, "lon": 23.7275, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "ie": {
+      "country": "Ireland",
+      "cities": [
+        { "name": "Dublin", "timeZone": "Europe/Dublin", "lat": 53.3498, "lon": -6.2603, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "pl": {
+      "country": "Poland",
+      "cities": [
+        { "name": "Warsaw", "timeZone": "Europe/Warsaw", "lat": 52.2297, "lon": 21.0122, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "ro": {
+      "country": "Romania",
+      "cities": [
+        { "name": "Bucharest", "timeZone": "Europe/Bucharest", "lat": 44.4268, "lon": 26.1025, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "ru": {
+      "country": "Russia",
+      "cities": [
+        { "name": "Moscow", "timeZone": "Europe/Moscow", "lat": 55.7558, "lon": 37.6173, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "tr": {
+      "country": "Turkey",
+      "cities": [
+        { "name": "Istanbul", "timeZone": "Europe/Istanbul", "lat": 41.0082, "lon": 28.9784, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "ua": {
+      "country": "Ukraine",
+      "cities": [
+        { "name": "Kyiv", "timeZone": "Europe/Kyiv", "lat": 50.4501, "lon": 30.5234, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "by": {
+      "country": "Belarus",
+      "cities": [
+        { "name": "Minsk", "timeZone": "Europe/Minsk", "lat": 53.9045, "lon": 27.5615, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "jp": {
+      "country": "Japan",
+      "cities": [
+        { "name": "Tokyo", "timeZone": "Asia/Tokyo", "lat": 35.6762, "lon": 139.6503, "fixedOffsetMinutes": 540 }
+      ]
+    },
+    "kr": {
+      "country": "South Korea",
+      "cities": [
+        { "name": "Seoul", "timeZone": "Asia/Seoul", "lat": 37.5665, "lon": 126.9780, "fixedOffsetMinutes": 540 }
+      ]
+    },
+    "cn": {
+      "country": "China",
+      "cities": [
+        { "name": "Beijing", "timeZone": "Asia/Shanghai", "lat": 39.9042, "lon": 116.4074, "fixedOffsetMinutes": 480 }
+      ]
+    },
+    "in": {
+      "country": "India",
+      "cities": [
+        { "name": "Delhi", "timeZone": "Asia/Kolkata", "lat": 28.7041, "lon": 77.1025, "fixedOffsetMinutes": 330 }
+      ]
+    },
+    "id": {
+      "country": "Indonesia",
+      "cities": [
+        { "name": "Jakarta", "timeZone": "Asia/Jakarta", "lat": -6.2088, "lon": 106.8456, "fixedOffsetMinutes": 420 }
+      ]
+    },
+    "pk": {
+      "country": "Pakistan",
+      "cities": [
+        { "name": "Karachi", "timeZone": "Asia/Karachi", "lat": 24.8607, "lon": 67.0011, "fixedOffsetMinutes": 300 }
+      ]
+    },
+    "bd": {
+      "country": "Bangladesh",
+      "cities": [
+        { "name": "Dhaka", "timeZone": "Asia/Dhaka", "lat": 23.8103, "lon": 90.4125, "fixedOffsetMinutes": 360 }
+      ]
+    },
+    "ph": {
+      "country": "Philippines",
+      "cities": [
+        { "name": "Manila", "timeZone": "Asia/Manila", "lat": 14.5995, "lon": 120.9842, "fixedOffsetMinutes": 480 }
+      ]
+    },
+    "vn": {
+      "country": "Vietnam",
+      "cities": [
+        { "name": "Ho Chi Minh City", "timeZone": "Asia/Ho_Chi_Minh", "lat": 10.8231, "lon": 106.6297, "fixedOffsetMinutes": 420 }
+      ]
+    },
+    "th": {
+      "country": "Thailand",
+      "cities": [
+        { "name": "Bangkok", "timeZone": "Asia/Bangkok", "lat": 13.7563, "lon": 100.5018, "fixedOffsetMinutes": 420 }
+      ]
+    },
+    "my": {
+      "country": "Malaysia",
+      "cities": [
+        { "name": "Kuala Lumpur", "timeZone": "Asia/Kuala_Lumpur", "lat": 3.1390, "lon": 101.6869, "fixedOffsetMinutes": 480 }
+      ]
+    },
+    "sg": {
+      "country": "Singapore",
+      "cities": [
+        { "name": "Singapore", "timeZone": "Asia/Singapore", "lat": 1.3521, "lon": 103.8198, "fixedOffsetMinutes": 480 }
+      ]
+    },
+    "lk": {
+      "country": "Sri Lanka",
+      "cities": [
+        { "name": "Colombo", "timeZone": "Asia/Colombo", "lat": 6.9271, "lon": 79.8612, "fixedOffsetMinutes": 330 }
+      ]
+    },
+    "np": {
+      "country": "Nepal",
+      "cities": [
+        { "name": "Kathmandu", "timeZone": "Asia/Kathmandu", "lat": 27.7172, "lon": 85.3240, "fixedOffsetMinutes": 345 }
+      ]
+    },
+    "ir": {
+      "country": "Iran",
+      "cities": [
+        { "name": "Tehran", "timeZone": "Asia/Tehran", "lat": 35.6892, "lon": 51.3890, "fixedOffsetMinutes": 210 }
+      ]
+    },
+    "iq": {
+      "country": "Iraq",
+      "cities": [
+        { "name": "Baghdad", "timeZone": "Asia/Baghdad", "lat": 33.3128, "lon": 44.3615, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "sa": {
+      "country": "Saudi Arabia",
+      "cities": [
+        { "name": "Riyadh", "timeZone": "Asia/Riyadh", "lat": 24.7136, "lon": 46.6753, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "ae": {
+      "country": "United Arab Emirates",
+      "cities": [
+        { "name": "Dubai", "timeZone": "Asia/Dubai", "lat": 25.2048, "lon": 55.2708, "fixedOffsetMinutes": 240 }
+      ]
+    },
+    "il": {
+      "country": "Israel",
+      "cities": [
+        { "name": "Jerusalem", "timeZone": "Asia/Jerusalem", "lat": 31.7683, "lon": 35.2137, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "jo": {
+      "country": "Jordan",
+      "cities": [
+        { "name": "Amman", "timeZone": "Asia/Amman", "lat": 31.9454, "lon": 35.9284, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "lb": {
+      "country": "Lebanon",
+      "cities": [
+        { "name": "Beirut", "timeZone": "Asia/Beirut", "lat": 33.8938, "lon": 35.5018, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "kw": {
+      "country": "Kuwait",
+      "cities": [
+        { "name": "Kuwait City", "timeZone": "Asia/Kuwait", "lat": 29.3759, "lon": 47.9774, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "qa": {
+      "country": "Qatar",
+      "cities": [
+        { "name": "Doha", "timeZone": "Asia/Qatar", "lat": 25.2854, "lon": 51.5310, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "om": {
+      "country": "Oman",
+      "cities": [
+        { "name": "Muscat", "timeZone": "Asia/Muscat", "lat": 23.5880, "lon": 58.3829, "fixedOffsetMinutes": 240 }
+      ]
+    },
+    "eg": {
+      "country": "Egypt",
+      "cities": [
+        { "name": "Cairo", "timeZone": "Africa/Cairo", "lat": 30.0444, "lon": 31.2357, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "za": {
+      "country": "South Africa",
+      "cities": [
+        { "name": "Johannesburg", "timeZone": "Africa/Johannesburg", "lat": -26.2041, "lon": 28.0473, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "ng": {
+      "country": "Nigeria",
+      "cities": [
+        { "name": "Lagos", "timeZone": "Africa/Lagos", "lat": 6.5244, "lon": 3.3792, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "ke": {
+      "country": "Kenya",
+      "cities": [
+        { "name": "Nairobi", "timeZone": "Africa/Nairobi", "lat": -1.2921, "lon": 36.8219, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "et": {
+      "country": "Ethiopia",
+      "cities": [
+        { "name": "Addis Ababa", "timeZone": "Africa/Addis_Ababa", "lat": 8.9806, "lon": 38.7578, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "gh": {
+      "country": "Ghana",
+      "cities": [
+        { "name": "Accra", "timeZone": "Africa/Accra", "lat": 5.6037, "lon": -0.1870, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "ma": {
+      "country": "Morocco",
+      "cities": [
+        { "name": "Casablanca", "timeZone": "Africa/Casablanca", "lat": 33.5731, "lon": -7.5898, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "dz": {
+      "country": "Algeria",
+      "cities": [
+        { "name": "Algiers", "timeZone": "Africa/Algiers", "lat": 36.7538, "lon": 3.0588, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "tn": {
+      "country": "Tunisia",
+      "cities": [
+        { "name": "Tunis", "timeZone": "Africa/Tunis", "lat": 36.8065, "lon": 10.1815, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "tz": {
+      "country": "Tanzania",
+      "cities": [
+        { "name": "Dar es Salaam", "timeZone": "Africa/Dar_es_Salaam", "lat": -6.7924, "lon": 39.2083, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "ug": {
+      "country": "Uganda",
+      "cities": [
+        { "name": "Kampala", "timeZone": "Africa/Kampala", "lat": 0.3476, "lon": 32.5825, "fixedOffsetMinutes": 180 }
+      ]
+    },
+    "sn": {
+      "country": "Senegal",
+      "cities": [
+        { "name": "Dakar", "timeZone": "Africa/Dakar", "lat": 14.7167, "lon": -17.4677, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "ci": {
+      "country": "Côte d'Ivoire",
+      "cities": [
+        { "name": "Abidjan", "timeZone": "Africa/Abidjan", "lat": 5.35995, "lon": -4.00826, "fixedOffsetMinutes": 0 }
+      ]
+    },
+    "cm": {
+      "country": "Cameroon",
+      "cities": [
+        { "name": "Douala", "timeZone": "Africa/Douala", "lat": 4.0511, "lon": 9.7679, "fixedOffsetMinutes": 60 }
+      ]
+    },
+    "zw": {
+      "country": "Zimbabwe",
+      "cities": [
+        { "name": "Harare", "timeZone": "Africa/Harare", "lat": -17.8252, "lon": 31.0335, "fixedOffsetMinutes": 120 }
+      ]
+    },
+    "au": {
+      "country": "Australia",
+      "cities": [
+        { "name": "Sydney", "timeZone": "Australia/Sydney", "lat": -33.8688, "lon": 151.2093, "fixedOffsetMinutes": 600 },
+        { "name": "Melbourne", "timeZone": "Australia/Melbourne", "lat": -37.8136, "lon": 144.9631, "fixedOffsetMinutes": 600 }
+      ]
+    },
+    "nz": {
+      "country": "New Zealand",
+      "cities": [
+        { "name": "Auckland", "timeZone": "Pacific/Auckland", "lat": -36.8485, "lon": 174.7633, "fixedOffsetMinutes": 720 }
+      ]
+    },
+    "pg": {
+      "country": "Papua New Guinea",
+      "cities": [
+        { "name": "Port Moresby", "timeZone": "Pacific/Port_Moresby", "lat": -9.4438, "lon": 147.1803, "fixedOffsetMinutes": 600 }
+      ]
+    },
+    "fj": {
+      "country": "Fiji",
+      "cities": [
+        { "name": "Suva", "timeZone": "Pacific/Fiji", "lat": -18.1248, "lon": 178.4501, "fixedOffsetMinutes": 720 }
+      ]
+    }
+  }
+}

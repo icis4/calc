@@ -1,13 +1,11 @@
-const CACHE_NAME = 'glass-calc-v2.2.1';
+const CACHE_NAME = 'day-app-v1';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './README.md',
-  './LICENSE',
   './manifest.webmanifest',
   './icon.svg',
-  './locations.json',
-  './capitals.min.json',
+  '../locations.json',
+  '../capitals.min.json',
 ];
 
 self.addEventListener('install', (event) => {
@@ -31,8 +29,6 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Network-first for navigations (index.html / app shell) so UI updates
-  // propagate even if only index.html changes.
   const isNavigation = req.mode === 'navigate' || req.destination === 'document';
   if (isNavigation) {
     event.respondWith(
